@@ -1,6 +1,23 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 {
   home.packages = [ pkgs.rofi ];
+
+  home.activation.cloneWallpapers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -d "${config.home.homeDirectory}/Pictures/wallpapers" ]; then
+      ${pkgs.git}/bin/git clone https://github.com/robertjarske/wallpapers \
+        "${config.home.homeDirectory}/Pictures/wallpapers"
+    else
+      ${pkgs.git}/bin/git -C "${config.home.homeDirectory}/Pictures/wallpapers" pull --ff-only || true
+    fi
+  '';
+
+  xdg.configFile."hypr/hyprpaper.conf".text =
+    let wallpaper = "${config.home.homeDirectory}/Pictures/wallpapers/forest-mountain-cloudy-valley.png";
+    in ''
+      preload = ${wallpaper}
+      wallpaper = ,${wallpaper}
+      splash = false
+    '';
 
   xdg.configFile."hypr/hypridle.conf".text = ''
     general {
