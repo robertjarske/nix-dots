@@ -198,7 +198,7 @@ Lanzaboote is already enabled in the config (`host.secureboot.enable = true`). T
 # 1. Get sbctl temporarily
 nix shell nixpkgs#sbctl
 
-# 2. Generate Secure Boot keys (stored at /etc/secureboot)
+# 2. Generate Secure Boot keys (stored at /var/lib/sbctl)
 sudo sbctl create-keys
 
 # 3. Exit the nix shell
