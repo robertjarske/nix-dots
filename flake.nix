@@ -41,6 +41,15 @@
       config.allowUnfree = true;
     };
 
+    # nix-vscode-extensions evaluates its packages with its own legacyPackages
+    # instance which has no config (no allowUnfree). Calling its generated
+    # extensions file with our own configured pkgs fixes unfree extensions.
+    pkgsUnfree = import nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    };
+    vscodeExtensions = pkgsUnfree.callPackage "${nix-vscode-extensions}/generated/extensions.nix" {};
+
     mkHost = { hostModule, homeModule, username, disk, hostname }:
       nixpkgs.lib.nixosSystem {
         inherit system;
@@ -76,13 +85,9 @@
             host.disk = disk;
             networking.hostName = hostname;
 
-            # Add marketplace extensions into pkgs.vscode-extensions so they
-            # are evaluated with the system pkgs (which has allowUnfree = true).
-            nixpkgs.overlays = [ nix-vscode-extensions.overlays.default ];
-
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = { inherit hyprpanel; };
+            home-manager.extraSpecialArgs = { inherit hyprpanel vscodeExtensions; };
             home-manager.users.${username} = homeModule;
           }
         ];
