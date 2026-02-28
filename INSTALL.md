@@ -192,30 +192,33 @@ sudo nixos-rebuild switch --flake .#bastion
 
 Lanzaboote is already enabled in the config (`host.secureboot.enable = true`). These steps activate it in the firmware.
 
-`sbctl` is only available after the first rebuild (it's installed by the lanzaboote config), so two rebuilds are required.
+`sbctl` is not installed yet before the first rebuild, and lanzaboote fails if keys don't exist when it runs. Use `nix shell` to get `sbctl` temporarily, create the keys first, then rebuild.
 
 ```bash
-# 1. First rebuild — installs lanzaboote and sbctl, no signing yet
-sudo nixos-rebuild switch --flake .#bastion   # or .#forge
+# 1. Get sbctl temporarily
+nix shell nixpkgs#sbctl
 
 # 2. Generate Secure Boot keys (stored at /etc/secureboot)
 sudo sbctl create-keys
 
-# 3. Second rebuild — lanzaboote now signs boot files with the keys
+# 3. Exit the nix shell
+exit
+
+# 4. Rebuild — lanzaboote finds the keys and signs boot files successfully
 sudo nixos-rebuild switch --flake .#bastion   # or .#forge
 
-# 4. Verify all boot files are signed (every line should show ✓)
+# 5. Verify all boot files are signed (every line should show ✓)
 sudo sbctl verify
 
-# 5. Enroll your keys into UEFI firmware
+# 6. Enroll your keys into UEFI firmware
 #    --microsoft keeps Microsoft's keys — required on most hardware to avoid
 #    breaking firmware updates and option ROMs signed by Microsoft
 sudo sbctl enroll-keys --microsoft
 
-# 6. Reboot → enter BIOS → enable Secure Boot → save and exit
+# 7. Reboot → enter BIOS → enable Secure Boot → save and exit
 reboot
 
-# 7. Verify after reboot
+# 8. Verify after reboot
 bootctl status   # should show: Secure Boot: enabled
 ```
 
