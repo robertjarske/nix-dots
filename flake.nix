@@ -106,6 +106,7 @@
     apps.${system} = {
       edit-secret = {
         type = "app";
+        meta.description = "Edit an agenix secret with YubiKey";
         program = toString (pkgs.writeShellScript "edit-secret" ''
           set -euo pipefail
           if [ -z "''${1:-}" ]; then
@@ -125,6 +126,7 @@
 
       rekey = {
         type = "app";
+        meta.description = "Rekey all agenix secrets with YubiKey";
         program = toString (pkgs.writeShellScript "rekey" ''
           set -euo pipefail
           TMPFILE=$(mktemp)
