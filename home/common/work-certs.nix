@@ -4,7 +4,7 @@
   # programs.firefox's Certificates.Install policy is parsed but silently fails
   # to write to cert9.db on NixOS. certutil is the reliable alternative.
   home.activation.importWorkCerts = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    cert_dir="/etc/ipsec.d/cacerts"
+    cert_dir="/etc/work-certs"
     if [ -d "$cert_dir" ] && [ -f "$cert_dir/work-root-ca.pem" ]; then
       for profile in "$HOME/.config/mozilla/firefox"/*.default-release \
                      "$HOME/.config/mozilla/firefox"/*.default \

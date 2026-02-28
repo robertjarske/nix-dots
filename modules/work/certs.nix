@@ -25,11 +25,16 @@
           ${config.age.secrets.work-ike-ca.path} \
           > /run/work-certs/ca-bundle.pem
 
+      # ipsec.d: VPN only — strongswan owns this dir and keeps it 700
       mkdir -p /etc/ipsec.d/cacerts
-      chmod 755 /etc/ipsec.d /etc/ipsec.d/cacerts
-      install -m 0644 ${config.age.secrets.work-root-ca.path} /etc/ipsec.d/cacerts/work-root-ca.pem
-      install -m 0644 ${config.age.secrets.work-dev-ca.path}  /etc/ipsec.d/cacerts/work-dev-ca.pem
-      install -m 0644 ${config.age.secrets.work-ike-ca.path}  /etc/ipsec.d/cacerts/work-ike-ca.pem
+      install -m 0644 ${config.age.secrets.work-ike-ca.path} /etc/ipsec.d/cacerts/work-ike-ca.pem
+
+      # work-certs: user-accessible (Firefox, certutil, etc.)
+      mkdir -p /etc/work-certs
+      chmod 755 /etc/work-certs
+      install -m 0644 ${config.age.secrets.work-root-ca.path} /etc/work-certs/work-root-ca.pem
+      install -m 0644 ${config.age.secrets.work-dev-ca.path}  /etc/work-certs/work-dev-ca.pem
+      install -m 0644 ${config.age.secrets.work-ike-ca.path}  /etc/work-certs/work-ike-ca.pem
     '';
   };
 
