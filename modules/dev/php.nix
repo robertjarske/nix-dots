@@ -2,6 +2,6 @@
 {
   environment.systemPackages = with pkgs; [
     php
-    composer
+    phpPackages.composer
   ];
 }
