@@ -1,7 +1,5 @@
 { config, pkgs, ... }:
 let
-  # pkgs.strongswanNM is the NixOS-specific strongSwan build that includes
-  # charon-nm (the NetworkManager backend). pkgs.strongswan does NOT have it.
   strongswanNM-bypass = pkgs.strongswanNM.overrideAttrs (old: {
     configureFlags = (old.configureFlags or []) ++ [ "--enable-bypass-lan" ];
   });

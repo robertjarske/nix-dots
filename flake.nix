@@ -41,13 +41,12 @@
       config.allowUnfree = true;
     };
 
-    # nix-vscode-extensions uses its own pkgs instance with no allowUnfree.
-    # Per their docs: apply the overlay + allowUnfree together on the same pkgs.
+    # Apply overlay + allowUnfree on the same pkgs instance (required for unfree extensions).
     vscodeExtensions = (import nixpkgs {
       inherit system;
       config.allowUnfree = true;
       overlays = [ nix-vscode-extensions.overlays.default ];
-    }).vscode-extensions;
+    }).nix-vscode-extensions;
 
     mkHost = { hostModule, homeModule, username, disk, hostname }:
       nixpkgs.lib.nixosSystem {
@@ -73,9 +72,6 @@
           ./modules/security/yubikey.nix
           ./modules/security/agenix.nix
           ./modules/network/wifi.nix
-          # Desktop modules are imported per-host (not here) so headless or
-          # server configurations can use mkHost without pulling in a full DE.
-
           hostModule
 
           # Host parameters — single source of truth

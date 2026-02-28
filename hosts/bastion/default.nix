@@ -30,7 +30,6 @@
     firefox
   ];
 
-  # Allow 1password to use system auth
   programs._1password.enable = true;
   programs._1password-gui = {
       enable = true;

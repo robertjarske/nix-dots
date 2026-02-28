@@ -23,16 +23,9 @@
 
   hardware.nvidia-container-toolkit.enable = true;
 
-  # Hibernation — get the offset after first boot:
-  #   sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
-  # host.hibernation.resumeOffset = XXXXXXXX;
-
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
 
-  # Work SSH key for AD-joined servers.
-  # To set up: nix run .#edit-secret -- secrets/work-ssh-ad.age
-  #   then paste the private key content and save.
-  # The key is placed at ~/.ssh/work_ad at activation time.
+  # Work SSH key for AD-joined servers (placed at ~/.ssh/work_ad).
   age.secrets.work-ssh-ad = {
     file  = ../../secrets/work-ssh-ad.age;
     path  = "/home/serobja/.ssh/work_ad";
@@ -40,8 +33,7 @@
     mode  = "0600";
   };
 
-  # Derive work_ad.pub from the private key after agenix places it.
-  # The public key is not sensitive and does not need to be a secret.
+  # Derive work_ad.pub from the private key (not sensitive, not an agenix secret).
   system.activationScripts.work-ssh-ad-pubkey = {
     deps = [ "agenix" ];
     text = ''
