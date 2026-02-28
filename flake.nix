@@ -41,14 +41,13 @@
       config.allowUnfree = true;
     };
 
-    # nix-vscode-extensions evaluates its packages with its own legacyPackages
-    # instance which has no config (no allowUnfree). Calling its generated
-    # extensions file with our own configured pkgs fixes unfree extensions.
-    pkgsUnfree = import nixpkgs {
+    # nix-vscode-extensions uses its own pkgs instance with no allowUnfree.
+    # Per their docs: apply the overlay + allowUnfree together on the same pkgs.
+    vscodeExtensions = (import nixpkgs {
       inherit system;
       config.allowUnfree = true;
-    };
-    vscodeExtensions = pkgsUnfree.callPackage "${nix-vscode-extensions}/generated/extensions.nix" {};
+      overlays = [ nix-vscode-extensions.overlays.default ];
+    }).vscode-extensions;
 
     mkHost = { hostModule, homeModule, username, disk, hostname }:
       nixpkgs.lib.nixosSystem {
