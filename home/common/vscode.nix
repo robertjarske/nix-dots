@@ -5,12 +5,9 @@ in
 {
   programs.vscode = {
     enable = true;
-
-    # mutableExtensionsDir = true allows VSCode to install extensions via the
-    # marketplace UI (e.g. github.copilot) alongside nix-managed ones.
     mutableExtensionsDir = true;
 
-    extensions = [
+    profiles.default.extensions = [
       # --- Nix ---
       mkt.jnoortheen.nix-ide
       mkt.arrterian.nix-env-selector
@@ -82,7 +79,7 @@ in
       # install manually via the marketplace.
     ];
 
-    keybindings = [
+    profiles.default.keybindings = [
       {
         key     = "ctrl+shift+down";
         command = "editor.action.copyLinesDownAction";
@@ -124,7 +121,7 @@ in
       }
     ];
 
-    userSettings = {
+    profiles.default.userSettings = {
       "workbench.colorTheme"                      = "Catppuccin Macchiato";
       "workbench.iconTheme"                       = "material-icon-theme";
       "workbench.secondarySideBar.defaultVisibility" = "hidden";
