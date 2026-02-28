@@ -3,6 +3,7 @@
   home.packages = [ pkgs.rofi ];
 
   home.activation.cloneWallpapers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "${config.home.homeDirectory}/Pictures"
     if [ ! -d "${config.home.homeDirectory}/Pictures/wallpapers" ]; then
       ${pkgs.git}/bin/git clone https://github.com/robertjarske/wallpapers \
         "${config.home.homeDirectory}/Pictures/wallpapers"
