@@ -6,15 +6,22 @@
     ../../modules/desktop/hyprland.nix
     ../../modules/desktop/sddm.nix
     ../../modules/desktop/audio.nix
+    ../../modules/desktop/bluetooth.nix
+    ../../modules/desktop/power.nix
     ../../modules/desktop/theme.nix
+    ../../modules/desktop/apps.nix
     ../../modules/work/vpn.nix
     ../../modules/work/certs.nix
     ../../modules/work/dns.nix
+    ../../modules/work/apps.nix
+    ../../modules/dev/php.nix
   ];
 
   # NVIDIA PRIME offload — verify bus IDs with: lspci | grep -E "VGA|3D"
   host.nvidia.intelBusId  = "PCI:0:2:0";
   host.nvidia.nvidiaBusId = "PCI:1:0:0";
+
+  hardware.nvidia-container-toolkit.enable = true;
 
   # Hibernation — get the offset after first boot:
   #   sudo btrfs inspect-internal map-swapfile -r /swap/swapfile

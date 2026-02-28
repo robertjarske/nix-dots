@@ -13,6 +13,7 @@
     ./common/fastfetch.nix
     ./common/ssh.nix
     ./common/vscode.nix
+    ./common/mpv.nix
   ];
 
   home.stateVersion = "25.11";

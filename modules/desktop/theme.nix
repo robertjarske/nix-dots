@@ -8,6 +8,10 @@
       noto-fonts-color-emoji
       nerd-fonts.jetbrains-mono
       nerd-fonts.fira-code
+      nerd-fonts.cascadia-code
+      inter
+      ibm-plex
+      symbola
     ];
 
     fontconfig.defaultFonts = {

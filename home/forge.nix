@@ -13,6 +13,7 @@
     ./common/fastfetch.nix
     ./common/ssh.nix
     ./common/vscode.nix
+    ./common/mpv.nix
   ];
 
   # Work SSH hosts live in a locally-managed file not tracked in git.

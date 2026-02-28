@@ -7,6 +7,7 @@
   environment.systemPackages = with pkgs; [
     yubikey-personalization
     yubikey-manager
+    yubikey-touch-detector
     age-plugin-yubikey
     libfido2
   ];

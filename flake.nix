@@ -76,12 +76,13 @@
             host.disk = disk;
             networking.hostName = hostname;
 
+            # Add marketplace extensions into pkgs.vscode-extensions so they
+            # are evaluated with the system pkgs (which has allowUnfree = true).
+            nixpkgs.overlays = [ nix-vscode-extensions.overlays.default ];
+
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = {
-              inherit hyprpanel;
-              vscodeExtensions = nix-vscode-extensions.extensions.${system};
-            };
+            home-manager.extraSpecialArgs = { inherit hyprpanel; };
             home-manager.users.${username} = homeModule;
           }
         ];

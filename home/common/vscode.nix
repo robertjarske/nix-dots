@@ -1,6 +1,8 @@
-{ pkgs, config, vscodeExtensions, ... }:
+{ pkgs, config, ... }:
 let
-  mkt = vscodeExtensions.vscode-marketplace;
+  # nix-vscode-extensions overlay adds marketplace extensions into
+  # pkgs.vscode-extensions, evaluated with the system pkgs (allowUnfree = true).
+  mkt = pkgs.vscode-extensions.vscode-marketplace;
 in
 {
   programs.vscode = {

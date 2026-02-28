@@ -5,7 +5,10 @@
     ../../modules/desktop/hyprland.nix
     ../../modules/desktop/sddm.nix
     ../../modules/desktop/audio.nix
+    ../../modules/desktop/bluetooth.nix
+    ../../modules/desktop/power.nix
     ../../modules/desktop/theme.nix
+    ../../modules/desktop/apps.nix
     # TEMPORARY: work modules loaded on bastion for testing/verification before
     # forge is online. Remove once forge is the active work machine and rekeyed.
     ../../modules/work/vpn.nix

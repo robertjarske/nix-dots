@@ -1,13 +1,34 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    eza        # modern ls (exa successor)
+    # --- Modern core utils ---
+    eza        # modern ls
     bat        # modern cat
     fd         # modern find
     xcp        # modern cp
-    moreutils  # provides sponge (used in lint_* aliases)
-    jq         # json processing (used in lint_* aliases)
+    moreutils  # sponge etc.
+    jq         # json processing
     unzip      # extracting downloads
+
+    # --- Search / fuzzy ---
+    ripgrep    # fast grep (also used by neovim telescope)
+    fzf        # fuzzy finder
+
+    # --- System monitoring ---
+    btop       # top replacement
+    du-dust    # intuitive du
+    ncdu       # ncurses du
+
+    # --- Network utils ---
+    nmap       # network scanner
+    whois      # domain lookup
+    rsync      # file sync
+
+    # --- Misc CLI ---
+    bc         # calculator
+    navi       # interactive cheatsheet
+    lazygit    # git TUI
+    lazydocker # docker TUI
   ];
 
   programs.bat = {
