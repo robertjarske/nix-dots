@@ -25,9 +25,14 @@
       url = "github:Jas-SinghFSU/HyprPanel";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+
+    nix-vscode-extensions = {
+      url = "github:nix-community/nix-vscode-extensions";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, disko, agenix, hyprpanel, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, disko, agenix, hyprpanel, nix-vscode-extensions, ... }:
   let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
@@ -73,7 +78,10 @@
 
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = { inherit hyprpanel; };
+            home-manager.extraSpecialArgs = {
+              inherit hyprpanel;
+              vscodeExtensions = nix-vscode-extensions.extensions.${system};
+            };
             home-manager.users.${username} = homeModule;
           }
         ];
