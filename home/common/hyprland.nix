@@ -1,6 +1,6 @@
 { config, pkgs, ... }:
 {
-  home.packages = [ pkgs.rofi-wayland ];
+  home.packages = [ pkgs.rofi ];
 
   xdg.configFile."hypr/hypridle.conf".text = ''
     general {
