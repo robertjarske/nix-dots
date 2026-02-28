@@ -2,7 +2,10 @@
 {
   programs.ssh = {
     enable = true;
-    extraConfig = "SetEnv TERM=xterm-256color";
-    matchBlocks."*".addKeysToAgent = "yes";
+    enableDefaultConfig = false;
+    matchBlocks."*" = {
+      addKeysToAgent = "yes";
+      setEnv = { TERM = "xterm-256color"; };
+    };
   };
 }

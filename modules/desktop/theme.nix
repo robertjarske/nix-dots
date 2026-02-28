@@ -8,7 +8,7 @@
       noto-fonts-color-emoji
       nerd-fonts.jetbrains-mono
       nerd-fonts.fira-code
-      nerd-fonts.cascadia-mono
+      nerd-fonts.caskaydia-mono
       inter
       ibm-plex
       symbola
