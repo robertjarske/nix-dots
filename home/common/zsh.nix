@@ -16,7 +16,7 @@
 
     # --- System monitoring ---
     btop       # top replacement
-    du-dust    # intuitive du
+    dust       # intuitive du
     ncdu       # ncurses du
 
     # --- Network utils ---
