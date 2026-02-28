@@ -51,10 +51,6 @@
                     mountpoint = "/var/log";
                     mountOptions = [ "noatime" "compress=zstd:1" "ssd" "discard=async" ];
                   };
-                  "@snapshots" = {
-                    mountpoint = "/.snapshots";
-                    mountOptions = [ "noatime" "compress=zstd:1" "ssd" "discard=async" ];
-                  };
                   "@swap" = {
                     mountpoint = "/swap";
                     swap.swapfile.size = "32G";

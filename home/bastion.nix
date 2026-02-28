@@ -14,6 +14,7 @@
     ./common/ssh.nix
     ./common/vscode.nix
     ./common/mpv.nix
+    ./common/direnv.nix
   ];
 
   home.stateVersion = "25.11";

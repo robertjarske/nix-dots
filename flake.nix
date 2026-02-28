@@ -30,9 +30,14 @@
       url = "github:nix-community/nix-vscode-extensions";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, disko, agenix, hyprpanel, nix-vscode-extensions, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, disko, agenix, hyprpanel, nix-vscode-extensions, lanzaboote, ... }:
   let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
@@ -56,6 +61,7 @@
           disko.nixosModules.disko
           home-manager.nixosModules.home-manager
           agenix.nixosModules.default
+          lanzaboote.nixosModules.lanzaboote
 
           ./modules/core/disko.nix
           ./modules/core/boot.nix
@@ -63,6 +69,7 @@
           ./modules/core/networking.nix
           ./modules/core/nix-settings.nix
           ./modules/core/users.nix
+          ./modules/core/snapper.nix
           ./modules/dev/docker.nix
           ./modules/dev/node.nix
           ./modules/dev/editors.nix
@@ -89,6 +96,13 @@
       };
   in
   {
+    templates = {
+      node    = { path = ./templates/node;    description = "Node.js / TypeScript"; };
+      php     = { path = ./templates/php;     description = "PHP + Composer";       };
+      python  = { path = ./templates/python;  description = "Python 3";             };
+      default = { path = ./templates/default; description = "Generic devShell";     };
+    };
+
     apps.${system} = {
       edit-secret = {
         type = "app";

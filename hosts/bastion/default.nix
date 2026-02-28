@@ -17,6 +17,7 @@
   ];
 
   host.hibernation.resumeOffset = 2299450;
+  host.secureboot.enable = true;
 
   environment.systemPackages = with pkgs; [
     git

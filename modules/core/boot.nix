@@ -1,14 +1,21 @@
 { pkgs, lib, config, ... }:
 {
-  options.host.hibernation.resumeOffset = lib.mkOption {
-    type = lib.types.nullOr lib.types.int;
-    default = null;
-    description = ''
-      BTRFS swapfile resume offset, required for suspend-to-disk.
-      Get the value after first boot with:
-        sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
-      Then set host.hibernation.resumeOffset = <number> and rebuild.
-    '';
+  options.host = {
+    hibernation.resumeOffset = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      description = ''
+        BTRFS swapfile resume offset, required for suspend-to-disk.
+        Get the value after first boot with:
+          sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
+        Then set host.hibernation.resumeOffset = <number> and rebuild.
+      '';
+    };
+
+    secureboot.enable = lib.mkOption {
+      type    = lib.types.bool;
+      default = false;
+    };
   };
 
   config = lib.mkMerge [
@@ -42,6 +49,15 @@
         boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
       };
     }
+
+    (lib.mkIf config.host.secureboot.enable {
+      boot.loader.systemd-boot.enable = lib.mkForce false;
+      boot.lanzaboote = {
+        enable    = true;
+        pkiBundle = "/etc/secureboot";
+      };
+      environment.systemPackages = [ pkgs.sbctl ];
+    })
 
     (lib.mkIf (config.host.hibernation.resumeOffset != null) {
       boot.kernelParams = [ "resume_offset=${toString config.host.hibernation.resumeOffset}" ];

@@ -17,6 +17,8 @@
     ../../modules/dev/php.nix
   ];
 
+  host.secureboot.enable = true;
+
   # NVIDIA PRIME offload — verify bus IDs with: lspci | grep -E "VGA|3D"
   host.nvidia.intelBusId  = "PCI:0:2:0";
   host.nvidia.nvidiaBusId = "PCI:1:0:0";
