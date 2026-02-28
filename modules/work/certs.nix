@@ -26,6 +26,7 @@
           > /run/work-certs/ca-bundle.pem
 
       mkdir -p /etc/ipsec.d/cacerts
+      chmod 755 /etc/ipsec.d /etc/ipsec.d/cacerts
       install -m 0644 ${config.age.secrets.work-root-ca.path} /etc/ipsec.d/cacerts/work-root-ca.pem
       install -m 0644 ${config.age.secrets.work-dev-ca.path}  /etc/ipsec.d/cacerts/work-dev-ca.pem
       install -m 0644 ${config.age.secrets.work-ike-ca.path}  /etc/ipsec.d/cacerts/work-ike-ca.pem
