@@ -6,9 +6,9 @@
   home.activation.importWorkCerts = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     cert_dir="/etc/ipsec.d/cacerts"
     if [ -d "$cert_dir" ] && [ -f "$cert_dir/work-root-ca.pem" ]; then
-      for profile in "$HOME/.mozilla/firefox"/*.default-release \
-                     "$HOME/.mozilla/firefox"/*.default \
-                     "$HOME/.mozilla/firefox"/*.default-esr; do
+      for profile in "$HOME/.config/mozilla/firefox"/*.default-release \
+                     "$HOME/.config/mozilla/firefox"/*.default \
+                     "$HOME/.config/mozilla/firefox"/*.default-esr; do
         [ -d "$profile" ] || continue
         ${pkgs.nss.tools}/bin/certutil -d "sql:$profile" -A \
           -n "Work Root CA" -t "CT,," \

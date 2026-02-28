@@ -25,13 +25,15 @@
   };
 
   environment.systemPackages = with pkgs; [
-    hyprpaper        # Wallpaper
-    hyprlock         # Lock screen
-    hypridle         # Idle management
-    hyprshot         # Screenshots
-    wl-clipboard     # Clipboard
-    brightnessctl    # Brightness control
-    playerctl        # Media key control
-    wofi             # Launcher
+    hyprpaper              # Wallpaper daemon
+    hyprlock               # Lock screen
+    hypridle               # Idle management
+    hyprshot               # Screenshots
+    wl-clipboard           # Wayland clipboard (wl-copy/wl-paste)
+    cliphist               # Clipboard history
+    brightnessctl          # Brightness control
+    playerctl              # Media key control
+    wofi                   # Launcher (fallback)
+    swaynotificationcenter # Notification daemon with panel
   ];
 }

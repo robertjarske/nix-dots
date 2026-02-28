@@ -127,6 +127,9 @@
         # Screenshots
         ", Print, exec, hyprshot -m output"
         "SHIFT, Print, exec, hyprshot -m region"
+
+        # Clipboard history picker
+        "$mod SHIFT, V, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
       ];
 
       bindm = [
@@ -146,6 +149,9 @@
         "hyprpaper"
         "hypridle"
         "hyprpanel"
+        "swaync"
+        "wl-paste --type text --watch cliphist store"
+        "wl-paste --type image --watch cliphist store"
       ];
     };
   };
