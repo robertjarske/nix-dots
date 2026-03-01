@@ -3,7 +3,7 @@ let
   yubikey2 = "age1yubikey1q233vgvezsfxkyat8cvwwcmzcnww3rhj4d3qss5vfv5yyh9q06kw5rch6ux";
   masters = [ yubikey1 yubikey2 ];
 
-  bastion = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFJZSpzYiejmj9maOjbF7XwZIKjbcxARea8juP4P+dvj";
+  bastion = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMCCnBAD6+Ec/uxrXbK4OEPCKLCQn8TmNwdK5PiYwDdl root@nixos";
   # forge = "ssh-ed25519 AAAA...";  # add after first install
 in
 {
