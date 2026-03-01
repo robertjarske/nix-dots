@@ -16,7 +16,7 @@
     ../../modules/work/dns.nix
   ];
 
-  host.hibernation.resumeOffset = 2299450;
+  host.hibernation.resumeOffset = 533760;
   host.secureboot.enable = true;
 
   environment.systemPackages = with pkgs; [
