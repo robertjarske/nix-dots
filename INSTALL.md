@@ -190,37 +190,67 @@ sudo nixos-rebuild switch --flake .#bastion
 
 ## Step 11 — Enable Secure Boot (Lanzaboote)
 
-Lanzaboote is already enabled in the config (`host.secureboot.enable = true`). These steps activate it in the firmware.
+Lanzaboote is already enabled in the config (`host.secureboot.enable = true`). Keys are stored at `/var/lib/sbctl`.
 
-`sbctl` is not installed yet before the first rebuild, and lanzaboote fails if keys don't exist when it runs. Use `nix shell` to get `sbctl` temporarily, create the keys first, then rebuild.
+### Part A — Create keys and rebuild
+
+`sbctl` is not installed before the first rebuild and lanzaboote fails without keys. Use `nix shell` first:
 
 ```bash
-# 1. Get sbctl temporarily
+# Get sbctl temporarily and create keys
 nix shell nixpkgs#sbctl
-
-# 2. Generate Secure Boot keys (stored at /var/lib/sbctl)
 sudo sbctl create-keys
-
-# 3. Exit the nix shell
 exit
 
-# 4. Rebuild — lanzaboote finds the keys and signs boot files successfully
+# Rebuild — lanzaboote finds the keys and signs boot files
 sudo nixos-rebuild switch --flake .#bastion   # or .#forge
 
-# 5. Verify all boot files are signed (every line should show ✓)
+# Verify all boot files are signed (unsigned kernels under /boot/EFI/nixos/ are expected)
 sudo sbctl verify
+```
 
-# 6. Enroll your keys into UEFI firmware
-#    --microsoft keeps Microsoft's keys — required on most hardware to avoid
-#    breaking firmware updates and option ROMs signed by Microsoft
+### Part B — Prepare firmware (Dell-specific, similar on other vendors)
+
+1. Reboot into BIOS
+2. Go to Secure Boot settings
+3. Enable **Custom key management** (or equivalent — needed to manage individual keys)
+4. Select **PK** → **Delete** (this puts the firmware into Setup Mode)
+5. **Leave Custom key management enabled** — disabling it causes the firmware to reload its factory keys
+6. Save and exit → boot into NixOS
+
+### Part C — Enroll keys
+
+```bash
+# Confirm you are in Setup Mode before enrolling
+sudo sbctl status   # Setup Mode should show ✓ Enabled
+
+# If EFI variables are immutable, remove the flag first
+nix shell nixpkgs#e2fsprogs
+sudo chattr -i /sys/firmware/efi/efivars/KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c
+sudo chattr -i /sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f
+exit
+
+# Enroll keys — --microsoft keeps Microsoft's keys alongside ours,
+# required on most hardware to avoid breaking firmware updates
 sudo sbctl enroll-keys --microsoft
 
-# 7. Reboot → enter BIOS → enable Secure Boot → save and exit
-reboot
-
-# 8. Verify after reboot
-bootctl status   # should show: Secure Boot: enabled
+# Confirm enrollment
+sudo sbctl status   # Vendor Keys should show: microsoft (not builtin-PK)
 ```
+
+### Part D — Enable Secure Boot
+
+1. Reboot into BIOS
+2. Enable Secure Boot (leave in Deployed mode)
+3. Save and exit
+
+```bash
+# Verify after reboot
+sudo sbctl status    # Secure Boot: ✓ Enabled
+bootctl status       # Secure Boot: enabled (deployed)
+```
+
+**Important:** If `sbctl status` still shows `builtin-PK` after enrolling, it means the firmware reloaded its factory keys — go back to Part B and ensure Custom key management stays enabled before enrolling.
 
 ---
 
