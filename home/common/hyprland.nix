@@ -4,11 +4,13 @@ let
   # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [ pkgs.matugen ];
+    runtimeInputs = [ pkgs.matugen pkgs.jq ];
     text = ''
       wallpaper=$(find "$HOME/Pictures/wallpapers" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
       hyprctl hyprpaper preload "$wallpaper"
-      hyprctl hyprpaper wallpaper ",$wallpaper"
+      while IFS= read -r monitor; do
+        hyprctl hyprpaper wallpaper "$monitor,$wallpaper"
+      done < <(hyprctl monitors -j | jq -r '.[].name')
       matugen image "$wallpaper"
       pkill -USR1 kitty || true
     '';
