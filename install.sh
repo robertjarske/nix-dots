@@ -98,7 +98,18 @@ cmd "   nix run .#rekey"
 echo -e "  ${BOLD}3.${RESET} Commit and push:"
 cmd "   git add -p && git commit -m 'feat(secrets): add ${HOSTNAME} host key + rekey' && git push"
 
-# ── Step 7: Install ──────────────────────────────────────────────────────────
+# ── Step 7: Secure boot keys (lanzaboote bootstrap) ─────────────────────────
+# sbctl keys must exist before nixos-install so lanzaboote can install the bootloader.
+# Keys are created on the live ISO and copied into the target filesystem.
+step "Creating secure boot keys..."
+sudo nix --extra-experimental-features "nix-command flakes" \
+  shell nixpkgs#sbctl --command sbctl create-keys
+sudo mkdir -p /mnt/var/lib/sbctl
+sudo cp -a /var/lib/sbctl/. /mnt/var/lib/sbctl/
+info "Secure boot keys created. Enroll them after first boot with:"
+cmd "  sudo sbctl enroll-keys --microsoft"
+
+# ── Step 8: Install ──────────────────────────────────────────────────────────
 echo ""
 while true; do
   read -rp "  Press Enter once pushed to continue..."
@@ -123,7 +134,7 @@ done
 step "Running nixos-install..."
 sudo nixos-install --no-root-passwd --flake "${REPO_DIR}#${HOSTNAME}"
 
-# ── Step 8: Cleanup ──────────────────────────────────────────────────────────
+# ── Step 9: Cleanup ──────────────────────────────────────────────────────────
 rm -f /tmp/luks-password
 
 echo ""

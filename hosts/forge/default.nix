@@ -23,6 +23,23 @@
   host.nvidia.intelBusId  = "PCI:0:2:0";
   host.nvidia.nvidiaBusId = "PCI:1:0:0";
 
+  # TODO: remove once NVIDIA 580+ supports Linux 6.19 natively (upstream fix pending).
+  # Patch sourced from CachyOS — tracked at https://github.com/NixOS/nixpkgs/issues/489947
+  hardware.nvidia.package =
+    let
+      base = config.boot.kernelPackages.nvidiaPackages.latest;
+      cachyos-nvidia-patch = pkgs.fetchpatch {
+        url    = "https://raw.githubusercontent.com/CachyOS/CachyOS-PKGBUILDS/master/nvidia/nvidia-utils/kernel-6.19.patch";
+        sha256 = "sha256-YuJjSUXE6jYSuZySYGnWSNG5sfVei7vvxDcHx3K+IN4=";
+      };
+      driverAttr = if config.hardware.nvidia.open then "open" else "bin";
+    in
+    base // {
+      ${driverAttr} = base.${driverAttr}.overrideAttrs (oldAttrs: {
+        patches = (oldAttrs.patches or [ ]) ++ [ cachyos-nvidia-patch ];
+      });
+    };
+
   hardware.nvidia-container-toolkit.enable = true;
 
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
@@ -50,10 +67,11 @@
   system.activationScripts.nm-work-wifi-setup = {
     deps = [ "agenix" ];
     text = ''
+      mkdir -p /etc/NetworkManager/system-connections
       install -m 0600 -o root -g root ${config.age.secrets.work-wifi.path} \
         /etc/NetworkManager/system-connections/Work-WiFi.nmconnection
 
-      if ${pkgs.systemd}/bin/systemctl is-active --quiet NetworkManager.service; then
+      if ${pkgs.networkmanager}/bin/nmcli -t general status > /dev/null 2>&1; then
         ${pkgs.networkmanager}/bin/nmcli connection reload
       fi
     '';

@@ -8,12 +8,13 @@
   system.activationScripts.nm-wifi-setup = {
     deps = [ "agenix" ];
     text = ''
+      mkdir -p /etc/NetworkManager/system-connections
       install -m 0600 -o root -g root ${config.age.secrets.wifi-blackbox.path}      /etc/NetworkManager/system-connections/blackbox.nmconnection
       install -m 0600 -o root -g root ${config.age.secrets.wifi-blackbox-5g.path}   /etc/NetworkManager/system-connections/blackbox_5G.nmconnection
       install -m 0600 -o root -g root ${config.age.secrets.wifi-blackbox-5g-2.path} /etc/NetworkManager/system-connections/blackbox_5G-2.nmconnection
       install -m 0600 -o root -g root ${config.age.secrets.wifi-blackbox-6g.path}   /etc/NetworkManager/system-connections/blackbox_6G.nmconnection
 
-      if ${pkgs.systemd}/bin/systemctl is-active --quiet NetworkManager.service; then
+      if ${pkgs.networkmanager}/bin/nmcli -t general status > /dev/null 2>&1; then
         ${pkgs.networkmanager}/bin/nmcli connection reload
       fi
     '';

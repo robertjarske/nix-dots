@@ -22,7 +22,7 @@
       install -m 0644 -o root -g root ${config.age.secrets.dns-production.path} \
         /etc/NetworkManager/dnsmasq.d/03-production.conf
 
-      if ${pkgs.systemd}/bin/systemctl is-active --quiet NetworkManager.service; then
+      if ${pkgs.networkmanager}/bin/nmcli -t general status > /dev/null 2>&1; then
         ${pkgs.networkmanager}/bin/nmcli general reload
       fi
     '';

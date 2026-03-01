@@ -37,10 +37,11 @@ in
         exit 1
       fi
 
+      mkdir -p /etc/NetworkManager/system-connections
       install -m 0600 -o root -g root ${config.age.secrets.work-vpn.path} \
         /etc/NetworkManager/system-connections/Work-VPN.nmconnection
 
-      if ${pkgs.systemd}/bin/systemctl is-active --quiet NetworkManager.service; then
+      if ${pkgs.networkmanager}/bin/nmcli -t general status > /dev/null 2>&1; then
         ${pkgs.networkmanager}/bin/nmcli connection reload
       fi
     '';
