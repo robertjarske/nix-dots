@@ -156,7 +156,7 @@ in
         # Apps
         "$mod, Return, exec, kitty"
         "$mod, E, exec, nautilus"
-        "$mod, R, exec, pkill rofi || rofi -show drun -modi drun,calc,filebrowser,run,window"
+        "$mod, R, exec, pkill rofi || rofi -show drun -modi drun,filebrowser,run,window"
 
         # Window management
         "$mod, Q, killactive"
