@@ -4,7 +4,7 @@
 set -euo pipefail
 
 HOSTNAME="${1:?Usage: $0 <hostname>}"
-REPO="https://github.com/robertjarske/nix-dots"
+REPO="github:robertjarske/nix-dots"
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # ── Step 1: Keyboard layout ─────────────────────────────────────────────────
