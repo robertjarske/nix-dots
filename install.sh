@@ -63,22 +63,27 @@ echo ""
 echo "  Copy it to hosts/${HOSTNAME}/hardware-configuration.nix in the repo,"
 echo "  commit and push."
 echo ""
-read -rp "  Press Enter once pushed to continue..."
 
 # ── Step 6: Install ─────────────────────────────────────────────────────────
-echo ""
-echo "» Pulling latest changes (hardware-configuration.nix)..."
-git -C "$REPO_DIR" pull --ff-only
+while true; do
+  read -rp "  Press Enter once pushed to continue..."
+  echo ""
+  echo "» Pulling latest changes..."
+  git -C "$REPO_DIR" pull --ff-only
 
-echo "» Validating hardware configuration was pushed..."
-if ! diff -q \
-    "$REPO_DIR/hosts/${HOSTNAME}/hardware-configuration.nix" \
-    /mnt/etc/nixos/hardware-configuration.nix > /dev/null 2>&1; then
-  echo "Error: hosts/${HOSTNAME}/hardware-configuration.nix in the repo does not match"
-  echo "       the generated file at /mnt/etc/nixos/hardware-configuration.nix."
-  echo "       Commit and push it, then re-run this step."
-  exit 1
-fi
+  if diff -q \
+      "$REPO_DIR/hosts/${HOSTNAME}/hardware-configuration.nix" \
+      /mnt/etc/nixos/hardware-configuration.nix > /dev/null 2>&1; then
+    break
+  fi
+
+  echo ""
+  echo "  Files still differ. Diff:"
+  diff "$REPO_DIR/hosts/${HOSTNAME}/hardware-configuration.nix" \
+       /mnt/etc/nixos/hardware-configuration.nix || true
+  echo ""
+  echo "  Commit and push the correct file, then press Enter to retry."
+done
 
 echo "» Running nixos-install..."
 sudo nixos-install --no-root-passwd --flake "${REPO_DIR}#${HOSTNAME}"
