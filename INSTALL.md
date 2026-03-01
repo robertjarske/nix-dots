@@ -1,6 +1,4 @@
-# NixOS Fresh Install — bastion
-
-Documented procedure including all lessons learned from the first install.
+# NixOS Fresh Install
 
 ---
 
@@ -9,109 +7,46 @@ Documented procedure including all lessons learned from the first install.
 - NixOS minimal ISO on a bootable USB
 - A second device to push config changes from during install
 - WiFi credentials or ethernet
-- A strong LUKS fallback passphrase (store in a password manager)
+- A strong LUKS fallback passphrase (store in 1Password before starting)
 
 ---
 
-## Step 1 — Boot and basic setup
+## Steps 1–7 — Automated
 
-Boot the NixOS ISO. Once at the live shell:
-
-```bash
-# Set Swedish keyboard layout
-loadkeys sv-latin1
-
-# Connect to WiFi (use nmtui for a guided interface)
-nmtui
-```
-
----
-
-## Step 2 — Enable flakes
-
-`sudo` does not inherit exported environment variables, so pass the flag explicitly to every `nix` command rather than using `export`:
+Clone the repo from the live ISO and run the install script:
 
 ```bash
-# Do NOT use: export NIX_CONFIG="experimental-features = nix-command flakes"
-# Instead, pass it explicitly on each nix command (see Step 3)
+git clone https://github.com/robertjarske/nix-dots /tmp/setup
+/tmp/setup/install.sh <hostname>   # bastion or forge
 ```
 
----
+The script handles:
+1. Swedish keyboard layout
+2. WiFi (optional, via nmtui)
+3. SSH — starts sshd and prints the IP so you can `scp` from a second device
+4. LUKS fallback passphrase (prompted, written to `/tmp/luks-password`)
+5. Disko — partitions and formats the disk (destructive, confirms before running)
+6. Hardware configuration — generates it and pauses for you to commit it to the repo
+7. `nixos-install` — clones a fresh copy of the repo and installs
+8. Cleanup and reboot
 
-## Step 3 — Set LUKS fallback password
-
-This becomes keyslot 0 — the emergency fallback if both YubiKeys are unavailable. Choose a strong passphrase and store it somewhere safe before running this.
+**Hardware config step:** the script pauses and prints an `scp` command. On your second device:
 
 ```bash
-echo -n "your-strong-passphrase" > /tmp/luks-password
+scp nixos@<ip>:/mnt/etc/nixos/hardware-configuration.nix .
+# copy to hosts/<hostname>/hardware-configuration.nix, commit, push
 ```
 
----
-
-## Step 4 — Partition, format and mount with disko
-
-Disko reads the partition layout from the flake config and handles everything declaratively. **This is destructive — it wipes the target disk.**
-
-Because flakes are experimental, pass the flag explicitly:
-
-```bash
-sudo nix --extra-experimental-features "nix-command flakes" \
-  run github:nix-community/disko -- \
-  --mode disko \
-  --flake github:robertjarske/nix-dots#bastion
-```
-
-Verify everything mounted correctly:
-
-```bash
-lsblk
-```
-
-Expected output shows `/dev/nvme0n1p1` mounted at `/mnt/boot` and `/dev/nvme0n1p2` as LUKS with all BTRFS subvolumes mounted under `/mnt`.
-
----
-
-## Step 5 — Generate hardware configuration
-
-```bash
-sudo nixos-generate-config --no-filesystems --root /mnt
-cat /mnt/etc/nixos/hardware-configuration.nix
-```
-
-Copy the output into `hosts/bastion/hardware-configuration.nix` in the repo on your second device, commit and push before continuing.
-
----
-
-## Step 6 — Run nixos-install
-
-Do **not** run `nixos-install` pointing at GitHub directly — it cannot write the lock file to a remote URL. Clone the repo locally first:
-
-```bash
-# /mnt/etc/nixos already exists from nixos-generate-config, use a different path
-git clone https://github.com/robertjarske/nix-dots /tmp/nix-dots
-cd /tmp/nix-dots
-sudo nixos-install --no-root-passwd --flake .#bastion
-```
-
----
-
-## Step 7 — Clean up and reboot
-
-```bash
-rm /tmp/luks-password
-reboot
-```
-
-Remove the USB when the machine powers off.
+Then press Enter in the script to continue.
 
 ---
 
 ## Step 8 — First boot
 
-At the LUKS prompt enter the passphrase set in Step 3.
+At the LUKS prompt enter the passphrase from Step 4.
 
 Login at the console:
-- user: `gast`
+- user: `gast` (bastion) or `serobja` (forge)
 - password: `changeme` (set as `initialPassword` in users.nix)
 
 Change it immediately:
@@ -120,51 +55,20 @@ Change it immediately:
 passwd
 ```
 
-Verify sudo works:
-
-```bash
-sudo whoami  # Should return: root
-```
-
 ---
 
 ## Step 9 — Verify rebuild works
-
-Confirm the machine can rebuild itself from the repo:
 
 ```bash
 cd ~
 git clone https://github.com/robertjarske/nix-dots
 cd nix-dots
-sudo nixos-rebuild switch --flake .#bastion
+sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
 ---
 
-## Known gotchas
-
-**Disko partlabel naming** — disko names partitions as `disk-<diskname>-<partname>`. With `disk.main` and partition `luks`, the resulting partlabel is `disk-main-luks`, not `luks`. The boot module must reference `/dev/disk/by-partlabel/disk-main-luks`.
-
-**sudo and NIX_CONFIG** — `export NIX_CONFIG=...` does not survive `sudo`. Always pass `--extra-experimental-features "nix-command flakes"` explicitly on nix commands that need it in the live ISO.
-
-**nixos-install from GitHub** — fails with a lock file write error when pointing at a remote flake URL. Always clone the repo locally and run from there.
-
-**`/mnt/etc/nixos` is not empty** — `nixos-generate-config` writes there, so you cannot clone the repo into that path. Use `/tmp/nix-dots` or similar.
-
----
-
-## Post-install checklist
-
-- [ ] Password changed with `passwd`
-- [ ] `sudo whoami` returns `root`
-- [ ] `sudo nixos-rebuild switch --flake .#bastion` succeeds
-
----
-
-## Step 10 — Enable hibernation (required, not optional)
-
-The swap subvolume and 32 GB swapfile are allocated specifically for hibernation.
-Without this step, suspend-to-disk will silently fail or panic.
+## Step 10 — Enable hibernation
 
 Get the resume offset for the BTRFS swapfile:
 
@@ -172,91 +76,74 @@ Get the resume offset for the BTRFS swapfile:
 sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
 ```
 
-Copy the number it prints (e.g. `533760`), then add it to `modules/core/boot.nix`:
+Set it in `hosts/<hostname>/default.nix`:
 
 ```nix
-boot.kernelParams = [ "resume_offset=533760" ];
+host.hibernation.resumeOffset = <number>;
 ```
 
-Commit, push, and rebuild:
-
-```bash
-sudo nixos-rebuild switch --flake .#bastion
-```
-
-**This must be done before the machine first suspends, otherwise the resume_offset in boot.nix is wrong (defaulting to none) and the kernel will not know where to find the hibernation image.**
+Commit, push, and rebuild. **Must be done before the machine first suspends.**
 
 ---
 
 ## Step 11 — Enable Secure Boot (Lanzaboote)
 
-Lanzaboote is already enabled in the config (`host.secureboot.enable = true`). Keys are stored at `/var/lib/sbctl`.
+Keys are stored at `/var/lib/sbctl`. `sbctl` is not installed before the first rebuild and lanzaboote fails without keys — use `nix shell` first.
 
 ### Part A — Create keys and rebuild
 
-`sbctl` is not installed before the first rebuild and lanzaboote fails without keys. Use `nix shell` first:
-
 ```bash
-# Get sbctl temporarily and create keys
 nix shell nixpkgs#sbctl
 sudo sbctl create-keys
 exit
 
-# Rebuild — lanzaboote finds the keys and signs boot files
-sudo nixos-rebuild switch --flake .#bastion   # or .#forge
+sudo nixos-rebuild switch --flake .#<hostname>
 
-# Verify all boot files are signed (unsigned kernels under /boot/EFI/nixos/ are expected)
+# Verify — unsigned kernels under /boot/EFI/nixos/ are expected and fine
 sudo sbctl verify
 ```
 
 ### Part B — Prepare firmware (Dell-specific, similar on other vendors)
 
-1. Reboot into BIOS
-2. Go to Secure Boot settings
-3. Enable **Custom key management** (or equivalent — needed to manage individual keys)
-4. Select **PK** → **Delete** (this puts the firmware into Setup Mode)
-5. **Leave Custom key management enabled** — disabling it causes the firmware to reload its factory keys
-6. Save and exit → boot into NixOS
+1. Reboot into BIOS → Secure Boot settings
+2. Enable **Custom key management**
+3. Select **PK** → **Delete** (enters Setup Mode)
+4. **Leave Custom key management enabled** — disabling it causes the firmware to reload its factory keys
+5. Save and exit → boot into NixOS
 
 ### Part C — Enroll keys
 
 ```bash
-# Confirm you are in Setup Mode before enrolling
+# Confirm Setup Mode before enrolling
 sudo sbctl status   # Setup Mode should show ✓ Enabled
 
-# If EFI variables are immutable, remove the flag first
+# If EFI variables are immutable:
 nix shell nixpkgs#e2fsprogs
 sudo chattr -i /sys/firmware/efi/efivars/KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c
 sudo chattr -i /sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f
 exit
 
-# Enroll keys — --microsoft keeps Microsoft's keys alongside ours,
-# required on most hardware to avoid breaking firmware updates
 sudo sbctl enroll-keys --microsoft
 
-# Confirm enrollment
-sudo sbctl status   # Vendor Keys should show: microsoft (not builtin-PK)
+# Confirm — Vendor Keys should show: microsoft (not builtin-PK)
+sudo sbctl status
 ```
+
+**If `builtin-PK` still shows:** the firmware reloaded its factory keys. Go back to Part B and keep Custom key management enabled.
 
 ### Part D — Enable Secure Boot
 
-1. Reboot into BIOS
-2. Enable Secure Boot (leave in Deployed mode)
-3. Save and exit
+1. Reboot into BIOS → enable Secure Boot (Deployed mode) → save
+2. Verify:
 
 ```bash
-# Verify after reboot
 sudo sbctl status    # Secure Boot: ✓ Enabled
 bootctl status       # Secure Boot: enabled (deployed)
 ```
 
-**Important:** If `sbctl status` still shows `builtin-PK` after enrolling, it means the firmware reloaded its factory keys — go back to Part B and ensure Custom key management stays enabled before enrolling.
-
 ---
 
 ## Step 12 — Enroll YubiKeys for FIDO2 LUKS unlock
-
-After first boot the disk uses the password-only keyslot. Add both YubiKeys:
 
 ```bash
 # Enroll YubiKey #1 (plug in first)
@@ -264,7 +151,7 @@ sudo systemd-cryptenroll /dev/nvme0n1p2 \
   --fido2-device=auto \
   --fido2-with-client-pin=yes
 
-# Swap to YubiKey #2 and enroll it
+# Swap to YubiKey #2 and repeat
 sudo systemd-cryptenroll /dev/nvme0n1p2 \
   --fido2-device=auto \
   --fido2-with-client-pin=yes
@@ -273,4 +160,4 @@ sudo systemd-cryptenroll /dev/nvme0n1p2 \
 sudo cryptsetup luksDump /dev/nvme0n1p2
 ```
 
-At next reboot the LUKS prompt will accept either YubiKey (touch + PIN). The passphrase keyslot remains as a fallback.
+At next reboot the LUKS prompt accepts either YubiKey (touch + PIN). The passphrase keyslot remains as fallback.
