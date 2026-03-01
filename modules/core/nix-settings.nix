@@ -3,7 +3,6 @@
   nix = {
     settings = {
       experimental-features = [ "nix-command" "flakes" ];
-      auto-optimise-store = true;
 
       substituters = [
         "https://cache.nixos.org"
@@ -21,7 +20,16 @@
     gc = {
       automatic = true;
       dates = "weekly";
-      options = "--delete-older-than 30d";
+      # Keep at least 10 generations regardless of age, plus everything from
+      # the last 14 days. Prevents unbounded accumulation during active weeks.
+      options = "--delete-older-than 14d --keep-last 10";
+    };
+
+    # Deduplicate the store weekly on a schedule rather than on every build.
+    # auto-optimise-store adds overhead to each individual build operation.
+    optimise = {
+      automatic = true;
+      dates = [ "weekly" ];
     };
   };
 

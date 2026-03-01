@@ -151,11 +151,12 @@ in
       "stylelint.snippet"                         = [ "css" "less" "postcss" "scss" ];
       "stylelint.validate"                        = [ "css" "less" "postcss" "scss" ];
 
+      # Maps a language ID to another so Emmet uses that mode.
+      # html/js/ts have built-in Emmet; only non-standard languages need entries here.
       "emmet.includeLanguages" = {
-        "html"            = "true";
-        "javascript"      = "true";
-        "javascriptreact" = "true";
-        "twig"            = "html";
+        "javascriptreact"  = "html";  # Emmet HTML mode inside JSX
+        "typescriptreact"  = "html";  # Emmet HTML mode inside TSX
+        "twig"             = "html";  # Twig templates use HTML Emmet
       };
 
       "makefile.configureOnOpen"                  = false;

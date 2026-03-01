@@ -1,6 +1,6 @@
-{ agenix, config, ... }:
+{ agenix, config, pkgs, ... }:
 {
-  environment.systemPackages = [ agenix.packages.x86_64-linux.default ];
+  environment.systemPackages = [ agenix.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 
   age.secrets.user-password = {
     file = ../../secrets/user-password.age;

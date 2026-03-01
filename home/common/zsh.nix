@@ -9,6 +9,7 @@
     moreutils  # sponge etc.
     jq         # json processing
     unzip      # extracting downloads
+    dive       # docker image explorer
 
     # --- Search / fuzzy ---
     ripgrep    # fast grep (also used by neovim telescope)
@@ -88,7 +89,6 @@
 
       # --- Docker ---
       dps  = "docker ps --format 'table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}'";
-      dive = "docker run -ti --rm -v /var/run/docker.sock:/var/run/docker.sock wagoodman/dive";
 
       # --- Git quick-fire ---
       asd    = "git add . && git commit -m 'asd' && git push";
@@ -111,6 +111,9 @@
       docker-server3 = "s docker-server3";
       prod           = "s prod";
       gitlab         = "s gitlab";
+
+      # --- Snapper / @home snapshots ---
+      snaps = "snapper -c home list";  # list all home snapshots
 
       # --- Nix dev shells ---
       ds  = "nix develop";  # enter current project's dev shell
@@ -140,6 +143,42 @@
       dsinit() {
         local tpl="''${1:-default}"
         nix flake init -t ~/code/nix-dots#"$tpl"
+      }
+
+      # --- Snapper helpers ---
+      # Snapshots live at /home/.snapshots/N/snapshot/$USER/
+
+      # Show which files changed between two snapshots (like git status).
+      # Usage: snap-status <from> <to>   e.g. snap-status 5 8
+      snap-status() {
+        local from="''${1:?Usage: snap-status <from-snapshot> <to-snapshot>}"
+        local to="''${2:?Usage: snap-status <from-snapshot> <to-snapshot>}"
+        snapper -c home status "$from..$to"
+      }
+
+      # List the contents of a snapshot (at an optional subpath relative to $HOME).
+      # Usage: snap-ls <N> [relative/path]   e.g. snap-ls 5   or   snap-ls 5 .config
+      snap-ls() {
+        local n="''${1:?Usage: snap-ls <snapshot-number> [relative-path]}"
+        local subpath="''${2:-}"
+        ls "/home/.snapshots/$n/snapshot/$USER/''${subpath}"
+      }
+
+      # Restore a file or directory from snapshot N to its current location.
+      # Usage: snap-restore <N> <relative/path/from/home>
+      # e.g.   snap-restore 5 .config/hypr/hyprland.conf
+      snap-restore() {
+        local n="''${1:?Usage: snap-restore <snapshot-number> <path-relative-to-home>}"
+        local relpath="''${2:?Usage: snap-restore <snapshot-number> <path-relative-to-home>}"
+        local src="/home/.snapshots/$n/snapshot/$USER/$relpath"
+        local dst="$HOME/$relpath"
+        if [ ! -e "$src" ]; then
+          echo "Error: '$relpath' not found in snapshot $n"
+          return 1
+        fi
+        echo "Restoring: $src"
+        echo "       to: $dst"
+        cp -ri "$src" "$dst"
       }
 
       # --- System info on shell start ---

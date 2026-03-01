@@ -1,5 +1,14 @@
 { config, pkgs, lib, ... }:
 let
+  # Solid Catppuccin Mocha base (#1e1e2e) fallback used by hyprpaper at service
+  # startup. Always available in the Nix store — no network or clone required.
+  # wallpaper-change replaces it with a real wallpaper 2 seconds after login.
+  fallbackWallpaper = pkgs.runCommand "fallback-wallpaper.png" {
+    nativeBuildInputs = [ pkgs.imagemagick ];
+  } ''
+    convert -size 1920x1080 xc:'#1e1e2e' "$out"
+  '';
+
   # Changes the wallpaper via hyprpaper IPC and regenerates Material You colors.
   # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
   wallpaper-change = pkgs.writeShellApplication {
@@ -12,6 +21,10 @@ let
       flock -n 9 || exit 0
 
       wallpaper=$(find "$HOME/Pictures/wallpapers" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
+
+      # No wallpapers yet (clone hasn't run or failed) — exit cleanly.
+      # hyprpaper is already showing the nix-store fallback.
+      [ -n "$wallpaper" ] || exit 0
 
       hyprctl hyprpaper preload "$wallpaper"
       while IFS= read -r monitor; do
@@ -44,25 +57,30 @@ EOF
     fi
   '';
 
-  home.activation.cloneWallpapers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    mkdir -p "${config.home.homeDirectory}/Pictures"
-    if [ ! -d "${config.home.homeDirectory}/Pictures/wallpapers" ]; then
-      ${pkgs.git}/bin/git clone https://github.com/robertjarske/wallpapers \
-        "${config.home.homeDirectory}/Pictures/wallpapers"
+  home.activation.syncWallpapers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    wallpapers_dir="${config.home.homeDirectory}/Pictures/wallpapers"
+    mkdir -p "$(dirname "$wallpapers_dir")"
+    if [ -d "$wallpapers_dir" ]; then
+      ${pkgs.git}/bin/git -C "$wallpapers_dir" pull --ff-only \
+        || echo "wallpaper-sync: git pull failed (offline?), using cached wallpapers"
     else
-      ${pkgs.git}/bin/git -C "${config.home.homeDirectory}/Pictures/wallpapers" pull --ff-only || true
+      ${pkgs.git}/bin/git clone https://github.com/robertjarske/wallpapers "$wallpapers_dir" \
+        || echo "wallpaper-sync: initial clone failed (offline?), hyprpaper fallback will be used until next rebuild with network"
     fi
   '';
 
   # Managed as a systemd user service so nixos-rebuild switch restarts it
   # cleanly instead of killing the process and leaving no wallpaper.
+  # Initial wallpaper is a nix-store solid-color image (always available).
+  # wallpaper-change replaces it with a real image from ~/Pictures/wallpapers
+  # 2 seconds after login (exec-once below).
   services.hyprpaper = {
     enable = true;
     settings = {
       splash = false;
       ipc = true;
-      preload = [ "${config.home.homeDirectory}/Pictures/wallpapers/forest-mountain-cloudy-valley.png" ];
-      wallpaper = [ ",${config.home.homeDirectory}/Pictures/wallpapers/forest-mountain-cloudy-valley.png" ];
+      preload = [ "${fallbackWallpaper}" ];
+      wallpaper = [ ",${fallbackWallpaper}" ];
     };
   };
 
@@ -106,7 +124,9 @@ EOF
   wayland.windowManager.hyprland = {
     enable = true;
     settings = {
-      monitor = [ "eDP-1,3840x2400@60,0x0,1.6" ];
+      # Catch-all: any monitor not matched by a host-specific rule gets its
+      # preferred resolution, auto-placed, at scale 1.
+      monitor = [ ",preferred,auto,1" ];
 
       general = {
         gaps_in = 5;

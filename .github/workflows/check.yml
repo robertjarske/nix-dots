@@ -7,4 +7,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@v14
       - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - run: nix flake check
+      - name: Validate flake schema
+        run: nix flake check
+      - name: Build bastion configuration
+        run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --no-link
+      - name: Build forge configuration
+        run: nix build .#nixosConfigurations.forge.config.system.build.toplevel --no-link

@@ -47,13 +47,17 @@ At the LUKS prompt enter the passphrase from Step 4.
 
 Login at the console:
 - user: `gast` (bastion) or `serobja` (forge)
-- password: `changeme` (set as `initialPassword` in users.nix)
+- password: `changeme` (temporary `initialPassword` — active until agenix can decrypt)
 
 Change it immediately:
 
 ```bash
 passwd
 ```
+
+> **Note:** The real password is stored in `user-password.age`. Once you complete the
+> post-install steps (add host key → rekey → rebuild), agenix takes over and
+> `hashedPasswordFile` supersedes `initialPassword`.
 
 ---
 

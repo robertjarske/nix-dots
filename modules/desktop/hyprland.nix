@@ -18,7 +18,6 @@
 
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";        # Electron apps use Wayland
-    WLR_NO_HARDWARE_CURSORS = "1"; # Fix cursor on some hardware
     XDG_CURRENT_DESKTOP = "Hyprland";
     XDG_SESSION_TYPE = "wayland";
     XDG_SESSION_DESKTOP = "Hyprland";
