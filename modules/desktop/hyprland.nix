@@ -28,11 +28,13 @@
     hyprpaper              # Wallpaper daemon
     hyprlock               # Lock screen
     hypridle               # Idle management
+    hyprpolkitagent        # Polkit authentication agent
     hyprshot               # Screenshots
     wl-clipboard           # Wayland clipboard (wl-copy/wl-paste)
     cliphist               # Clipboard history
     brightnessctl          # Brightness control
     playerctl              # Media key control
+    networkmanagerapplet   # NM system tray (VPN toggle, connection editing)
     wofi                   # Launcher (fallback)
     swaynotificationcenter # Notification daemon with panel
   ];

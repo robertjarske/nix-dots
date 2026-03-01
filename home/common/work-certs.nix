@@ -1,22 +1,36 @@
 { pkgs, lib, ... }:
+let
+  certutil = "${pkgs.nss.tools}/bin/certutil";
+  importCerts = db: ''
+    ${certutil} -d "${db}" -A -n "Work Root CA" -t "CT,," \
+      -i "$cert_dir/work-root-ca.pem" 2>/dev/null || true
+    ${certutil} -d "${db}" -A -n "Work Dev CA" -t "CT,," \
+      -i "$cert_dir/work-dev-ca.pem" 2>/dev/null || true
+  '';
+in
 {
-  # Import work CA certificates directly into Firefox's NSS cert database.
-  # programs.firefox's Certificates.Install policy is parsed but silently fails
-  # to write to cert9.db on NixOS. certutil is the reliable alternative.
+  # Import work CA certificates into browser NSS databases.
+  # programs.firefox's Certificates.Install policy silently fails on NixOS —
+  # certutil is the reliable alternative. Chrome and Vivaldi share ~/.pki/nssdb.
   home.activation.importWorkCerts = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     cert_dir="/etc/work-certs"
     if [ -d "$cert_dir" ] && [ -f "$cert_dir/work-root-ca.pem" ]; then
+
+      # Firefox profiles
       for profile in "$HOME/.config/mozilla/firefox"/*.default-release \
                      "$HOME/.config/mozilla/firefox"/*.default \
                      "$HOME/.config/mozilla/firefox"/*.default-esr; do
         [ -d "$profile" ] || continue
-        ${pkgs.nss.tools}/bin/certutil -d "sql:$profile" -A \
-          -n "Work Root CA" -t "CT,," \
-          -i "$cert_dir/work-root-ca.pem" 2>/dev/null || true
-        ${pkgs.nss.tools}/bin/certutil -d "sql:$profile" -A \
-          -n "Work Dev CA" -t "CT,," \
-          -i "$cert_dir/work-dev-ca.pem" 2>/dev/null || true
+        ${importCerts "sql:$profile"}
       done
+
+      # Chrome and Vivaldi — shared system NSS database
+      nssdb="$HOME/.pki/nssdb"
+      if [ ! -d "$nssdb" ]; then
+        mkdir -p "$nssdb"
+        ${certutil} -d "sql:$nssdb" -N --empty-password 2>/dev/null || true
+      fi
+      ${importCerts "sql:$nssdb"}
     fi
   '';
 }

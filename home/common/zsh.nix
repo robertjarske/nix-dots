@@ -112,6 +112,10 @@
       prod           = "s prod";
       gitlab         = "s gitlab";
 
+      # --- Nix dev shells ---
+      ds  = "nix develop";  # enter current project's dev shell
+      nsh = "nix shell";    # quick: nix shell nixpkgs#foo
+
       # --- Config quick-open ---
       zsh_config   = "nvim ~/code/nix-dots/home/common/zsh.nix";
       kitty_config = "nvim ~/code/nix-dots/home/common/kitty.nix";
@@ -130,6 +134,13 @@
       export PATH="$HOME/.config/composer/vendor/bin:$PATH"
       export PATH="$HOME/.local/bin:$PATH"
       export PATH="$HOME/.npm-global/bin:$PATH"
+
+      # --- Dev shell template initializer ---
+      # Usage: dsinit [template]   available: default, node, php, python
+      dsinit() {
+        local tpl="''${1:-default}"
+        nix flake init -t ~/code/nix-dots#"$tpl"
+      }
 
       # --- System info on shell start ---
       fastfetch

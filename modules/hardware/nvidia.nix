@@ -41,6 +41,11 @@
     environment.sessionVariables = {
       WLR_NO_HARDWARE_CURSORS = "1";
       NIXOS_OZONE_WL = "1";
+      # Suppress GSYNC/VRR warnings and GLX vendor selection
+      __GL_GSYNC_ALLOWED = "0";
+      __GL_VRR_ALLOWED   = "0";
+      # Xwayland: disable glamor to avoid flickering on NVIDIA
+      XWAYLAND_NO_GLAMOR = "1";
     };
   };
 }

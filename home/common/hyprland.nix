@@ -1,7 +1,21 @@
 { config, pkgs, lib, ... }:
+let
+  # Changes the wallpaper via hyprpaper IPC and regenerates Material You colors.
+  # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
+  wallpaper-change = pkgs.writeShellApplication {
+    name = "wallpaper-change";
+    runtimeInputs = [ pkgs.matugen ];
+    text = ''
+      wallpaper=$(find "$HOME/Pictures/wallpapers" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
+      hyprctl hyprpaper preload "$wallpaper"
+      hyprctl hyprpaper wallpaper ",$wallpaper"
+      matugen image "$wallpaper"
+      pkill -USR1 kitty || true
+    '';
+  };
+in
 {
-  home.packages = [ pkgs.rofi ];
-
+  home.packages = [ wallpaper-change ];
   home.activation.cloneWallpapers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "${config.home.homeDirectory}/Pictures"
     if [ ! -d "${config.home.homeDirectory}/Pictures/wallpapers" ]; then
@@ -22,24 +36,37 @@
 
   xdg.configFile."hypr/hypridle.conf".text = ''
     general {
-      lock_cmd = hyprlock
+      lock_cmd = pidof hyprlock || hyprlock
+      before_sleep_cmd = loginctl lock-session
       after_sleep_cmd = hyprctl dispatch dpms on
       ignore_dbus_inhibit = false
     }
 
     listener {
-      timeout = 300
-      on-timeout = hyprlock
+      timeout = 150
+      on-timeout = brightnessctl -s set 10
+      on-resume = brightnessctl -r
     }
 
     listener {
-      timeout = 600
+      timeout = 150
+      on-timeout = brightnessctl -sd rgb:kbd_backlight set 0
+      on-resume = brightnessctl -rd rgb:kbd_backlight
+    }
+
+    listener {
+      timeout = 300
+      on-timeout = loginctl lock-session
+    }
+
+    listener {
+      timeout = 330
       on-timeout = hyprctl dispatch dpms off
       on-resume = hyprctl dispatch dpms on
     }
 
     listener {
-      timeout = 1200
+      timeout = 1800
       on-timeout = systemctl suspend
     }
   '';
@@ -106,21 +133,42 @@
       };
 
       env = [
-        # Force dark variant for all GTK apps launched by Hyprland
         "GTK_THEME,catppuccin-mocha-mauve-standard:dark"
+
+        # Wayland backends
+        "GDK_BACKEND,wayland,x11"
+        "QT_QPA_PLATFORM,wayland;xcb"
+        "QT_AUTO_SCREEN_SCALE_FACTOR,1"
+        "QT_WAYLAND_DISABLE_WINDOWDECORATION,1"
+
+        # Firefox
+        "MOZ_ENABLE_WAYLAND,1"
+        "MOZ_USE_XINPUT2,1"
+
+        # Cursor
+        "XCURSOR_SIZE,24"
+        "HYPRCURSOR_SIZE,24"
       ];
 
       "$mod" = "SUPER";
 
       bind = [
+        # Apps
         "$mod, Return, exec, kitty"
-        "$mod, Q, killactive"
-        "$mod SHIFT, M, exit"
         "$mod, E, exec, nautilus"
+        "$mod, R, exec, pkill rofi || rofi -show drun -modi drun,calc,filebrowser,run,window"
+
+        # Window management
+        "$mod, Q, killactive"
+        "$mod, F, fullscreen"
         "$mod, V, togglefloating"
-        "$mod, R, exec, pkill rofi || rofi -show drun -modi drun,run,window"
         "$mod, P, pseudo"
         "$mod, J, togglesplit"
+        "$mod SHIFT, M, exit"
+        "$mod SHIFT, R, exec, hyprpanel -q & hyprpanel"
+
+        # Lock screen
+        "CTRL ALT, L, exec, pidof hyprlock || hyprlock"
 
         # Move focus
         "$mod, left, movefocus, l"
@@ -128,23 +176,45 @@
         "$mod, up, movefocus, u"
         "$mod, down, movefocus, d"
 
-        # Workspaces
+        # Workspaces — switch
         "$mod, 1, workspace, 1"
         "$mod, 2, workspace, 2"
         "$mod, 3, workspace, 3"
         "$mod, 4, workspace, 4"
         "$mod, 5, workspace, 5"
+        "$mod, 6, workspace, 6"
+        "$mod, 7, workspace, 7"
+        "$mod, 8, workspace, 8"
+        "$mod, 9, workspace, 9"
+        "$mod, 0, workspace, 10"
 
-        # Move to workspace
+        # Workspaces — move window
         "$mod SHIFT, 1, movetoworkspace, 1"
         "$mod SHIFT, 2, movetoworkspace, 2"
         "$mod SHIFT, 3, movetoworkspace, 3"
         "$mod SHIFT, 4, movetoworkspace, 4"
         "$mod SHIFT, 5, movetoworkspace, 5"
+        "$mod SHIFT, 6, movetoworkspace, 6"
+        "$mod SHIFT, 7, movetoworkspace, 7"
+        "$mod SHIFT, 8, movetoworkspace, 8"
+        "$mod SHIFT, 9, movetoworkspace, 9"
+        "$mod SHIFT, 0, movetoworkspace, 10"
+
+        # Scratchpad
+        "$mod, S, togglespecialworkspace, magic"
+        "$mod SHIFT, S, movetoworkspace, special:magic"
+
+        # Scroll through workspaces
+        "$mod, mouse_down, workspace, e+1"
+        "$mod, mouse_up, workspace, e-1"
+
+        # Wallpaper
+        "CTRL ALT, W, exec, wallpaper-change"
 
         # Screenshots
         ", Print, exec, hyprshot -m output"
         "SHIFT, Print, exec, hyprshot -m region"
+        "$mod, Print, exec, hyprshot -m window"
 
         # Clipboard history picker
         "$mod SHIFT, V, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
@@ -159,17 +229,34 @@
         ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
         ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
         ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
         ", XF86MonBrightnessUp, exec, brightnessctl set 10%+"
         ", XF86MonBrightnessDown, exec, brightnessctl set 10%-"
       ];
 
+      # bindl: active even when screen is locked
+      bindl = [
+        ", XF86AudioNext, exec, playerctl next"
+        ", XF86AudioPause, exec, playerctl play-pause"
+        ", XF86AudioPlay, exec, playerctl play-pause"
+        ", XF86AudioPrev, exec, playerctl previous"
+        ", switch:on:Lid Switch, exec, hyprctl dispatch dpms off eDP-1"
+        ", switch:off:Lid Switch, exec, hyprctl dispatch dpms on eDP-1"
+      ];
+
       exec-once = [
+        "hyprpolkitagent"
+        "nm-applet --indicator"
+        "yubikey-touch-detector --libnotify"
         "hyprpaper"
         "hypridle"
         "hyprpanel"
         "swaync"
         "wl-paste --type text --watch cliphist store"
         "wl-paste --type image --watch cliphist store"
+        # Apply random wallpaper and generate Material You colors on login.
+        # Small delay ensures hyprpaper is ready to accept IPC commands.
+        "bash -c 'sleep 2 && wallpaper-change'"
       ];
     };
   };

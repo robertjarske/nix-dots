@@ -1,5 +1,48 @@
-{ ... }:
+{ lib, config, ... }:
 {
+  # Catppuccin Mocha fallback — written on first activation so kitty can start
+  # before matugen has generated ~/.config/kitty/kitty-colors.conf.
+  # Once wallpaper-change runs, matugen overwrites this file.
+  home.activation.kittyColorsFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    colors_file="${config.home.homeDirectory}/.config/kitty/kitty-colors.conf"
+    if [ ! -f "$colors_file" ]; then
+      mkdir -p "$(dirname "$colors_file")"
+      cat > "$colors_file" << 'EOF'
+# Catppuccin Mocha (fallback until matugen runs)
+cursor                  #f5e0dc
+cursor_text_color       #1e1e2e
+foreground              #cdd6f4
+background              #1e1e2e
+selection_foreground    #cdd6f4
+selection_background    #313244
+url_color               #89b4fa
+
+active_tab_background   #cba6f7
+active_tab_foreground   #1e1e2e
+inactive_tab_background #313244
+inactive_tab_foreground #cdd6f4
+tab_bar_background      #11111b
+
+color0  #45475a
+color8  #585b70
+color1  #f38ba8
+color9  #f38ba8
+color2  #a6e3a1
+color10 #a6e3a1
+color3  #f9e2af
+color11 #f9e2af
+color4  #89b4fa
+color12 #89b4fa
+color5  #f5c2e7
+color13 #cba6f7
+color6  #94e2d5
+color14 #94e2d5
+color7  #bac2de
+color15 #a6adc8
+EOF
+    fi
+  '';
+
   programs.kitty = {
     enable = true;
 
@@ -47,40 +90,12 @@
       linux_display_server  = "auto";
       update_check_interval = 0;
 
-      # --- Catppuccin Mocha ---
-      background           = "#1e1e2e";
-      foreground           = "#cdd6f4";
-      selection_background = "#313244";
-      selection_foreground = "#cdd6f4";
-      cursor               = "#f5e0dc";
-      cursor_text_color    = "#1e1e2e";
-      url_color            = "#89b4fa";
-
-      # Tab bar colours
-      active_tab_background   = "#cba6f7";
-      active_tab_foreground   = "#1e1e2e";
-      inactive_tab_background = "#181825";
-      inactive_tab_foreground = "#cdd6f4";
-      tab_bar_background      = "#11111b";
-
-      # 16-colour palette
-      color0  = "#45475a"; # black
-      color8  = "#585b70"; # bright black
-      color1  = "#f38ba8"; # red
-      color9  = "#f38ba8"; # bright red
-      color2  = "#a6e3a1"; # green
-      color10 = "#a6e3a1"; # bright green
-      color3  = "#f9e2af"; # yellow
-      color11 = "#f9e2af"; # bright yellow
-      color4  = "#89b4fa"; # blue
-      color12 = "#89b4fa"; # bright blue
-      color5  = "#f5c2e7"; # magenta
-      color13 = "#cba6f7"; # bright magenta (mauve)
-      color6  = "#94e2d5"; # cyan
-      color14 = "#94e2d5"; # bright cyan
-      color7  = "#bac2de"; # white
-      color15 = "#a6adc8"; # bright white
     };
+
+    # Colors are managed by matugen (see home/common/matugen.nix).
+    # matugen writes ~/.config/kitty/kitty-colors.conf on each wallpaper change;
+    # kitty reloads it live via SIGUSR1 sent by the wallpaper-change script.
+    extraConfig = "include ~/.config/kitty/kitty-colors.conf";
 
     keybindings = {
       # Fix Ctrl+Left/Right word navigation.

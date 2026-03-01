@@ -5,19 +5,13 @@ set -euo pipefail
 
 HOSTNAME="${1:?Usage: $0 <hostname>}"
 REPO="https://github.com/robertjarske/nix-dots"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # ── Step 1: Keyboard layout ─────────────────────────────────────────────────
 echo "» Setting keyboard layout to sv-latin1..."
 loadkeys sv-latin1
 
-# ── Step 2: WiFi ────────────────────────────────────────────────────────────
-echo ""
-read -rp "» Connect to WiFi? [y/N] " wifi
-if [[ "${wifi,,}" == "y" ]]; then
-  nmtui
-fi
-
-# ── Step 3: SSH ─────────────────────────────────────────────────────────────
+# ── Step 2: SSH ─────────────────────────────────────────────────────────────
 echo ""
 echo "» Starting SSH so you can access this machine from a second device."
 echo "  You will need it to copy hardware-configuration.nix into the repo."
@@ -29,7 +23,7 @@ echo ""
 echo "  SSH is up. Connect from your second device with:"
 echo "    ssh nixos@$(ip -4 addr show scope global | awk '/inet/{print $2}' | cut -d/ -f1 | head -1)"
 
-# ── Step 4: LUKS passphrase ─────────────────────────────────────────────────
+# ── Step 3: LUKS passphrase ─────────────────────────────────────────────────
 echo ""
 echo "» LUKS fallback passphrase — this becomes keyslot 0 (emergency fallback)."
 echo "  Save it in 1Password before continuing."
@@ -42,7 +36,7 @@ while true; do
 done
 echo -n "$pass1" > /tmp/luks-password
 
-# ── Step 5: Disko ───────────────────────────────────────────────────────────
+# ── Step 4: Disko ───────────────────────────────────────────────────────────
 echo ""
 echo "» Disko will wipe and partition the disk for ${HOSTNAME}."
 read -rp "  Type 'yes' to confirm: " confirm
@@ -57,7 +51,7 @@ echo ""
 echo "» Disk layout:"
 lsblk
 
-# ── Step 6: Hardware configuration ──────────────────────────────────────────
+# ── Step 5: Hardware configuration ──────────────────────────────────────────
 echo ""
 echo "» Generating hardware configuration..."
 sudo nixos-generate-config --no-filesystems --root /mnt
@@ -71,16 +65,25 @@ echo "  commit and push."
 echo ""
 read -rp "  Press Enter once pushed to continue..."
 
-# ── Step 7: Install ─────────────────────────────────────────────────────────
+# ── Step 6: Install ─────────────────────────────────────────────────────────
 echo ""
-echo "» Cloning repo..."
-git clone "$REPO" /tmp/nix-install
-cd /tmp/nix-install
+echo "» Pulling latest changes (hardware-configuration.nix)..."
+git -C "$REPO_DIR" pull --ff-only
+
+echo "» Validating hardware configuration was pushed..."
+if ! diff -q \
+    "$REPO_DIR/hosts/${HOSTNAME}/hardware-configuration.nix" \
+    /mnt/etc/nixos/hardware-configuration.nix > /dev/null 2>&1; then
+  echo "Error: hosts/${HOSTNAME}/hardware-configuration.nix in the repo does not match"
+  echo "       the generated file at /mnt/etc/nixos/hardware-configuration.nix."
+  echo "       Commit and push it, then re-run this step."
+  exit 1
+fi
 
 echo "» Running nixos-install..."
-sudo nixos-install --no-root-passwd --flake ".#${HOSTNAME}"
+sudo nixos-install --no-root-passwd --flake "${REPO_DIR}#${HOSTNAME}"
 
-# ── Step 8: Cleanup ─────────────────────────────────────────────────────────
+# ── Step 7: Cleanup ─────────────────────────────────────────────────────────
 rm -f /tmp/luks-password
 
 echo ""

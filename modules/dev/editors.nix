@@ -3,6 +3,7 @@
   environment.systemPackages = [
     unstable.neovim
     unstable.vscode
+    unstable.claude-code
   ];
 
   environment.variables = {
