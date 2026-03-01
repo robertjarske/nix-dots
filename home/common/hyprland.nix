@@ -4,13 +4,25 @@ let
   # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [ pkgs.matugen pkgs.jq ];
+    runtimeInputs = [ pkgs.matugen pkgs.jq pkgs.util-linux ];
     text = ''
+      # Prevent concurrent runs — rapid invocations would preload multiple
+      # wallpapers without unloading them, eventually crashing hyprpaper.
+      exec 9>/tmp/wallpaper-change.lock
+      flock -n 9 || exit 0
+
       wallpaper=$(find "$HOME/Pictures/wallpapers" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
+
       hyprctl hyprpaper preload "$wallpaper"
       while IFS= read -r monitor; do
         hyprctl hyprpaper wallpaper "$monitor,$wallpaper"
       done < <(hyprctl monitors -j | jq -r '.[].name')
+      # Release wallpapers that are no longer displayed.
+      hyprctl hyprpaper unload all
+
+      # Rofi inputbar background
+      ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
+
       matugen image "$wallpaper"
       pkill -USR1 kitty || true
     '';
@@ -18,6 +30,20 @@ let
 in
 {
   home.packages = [ wallpaper-change ];
+  # Catppuccin Mocha fallback so `source` doesn't error on first boot before
+  # matugen has run. Only the variables actually used in the config are needed.
+  home.activation.hyprlandColorsFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    colors_file="${config.home.homeDirectory}/.config/hypr/matugen/matugen-hyprland.conf"
+    if [ ! -f "$colors_file" ]; then
+      mkdir -p "$(dirname "$colors_file")"
+      cat > "$colors_file" << 'EOF'
+$primary = rgba(cba6f7ff)
+$tertiary = rgba(94e2d5ff)
+$outline_variant = rgba(313244ff)
+EOF
+    fi
+  '';
+
   home.activation.cloneWallpapers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "${config.home.homeDirectory}/Pictures"
     if [ ! -d "${config.home.homeDirectory}/Pictures/wallpapers" ]; then
@@ -86,8 +112,8 @@ in
         gaps_in = 5;
         gaps_out = 10;
         border_size = 2;
-        "col.active_border" = "rgb(cba6f7) rgb(89b4fa) 45deg";
-        "col.inactive_border" = "rgb(313244)";
+        "col.active_border" = "$primary $tertiary 45deg";
+        "col.inactive_border" = "$outline_variant";
         layout = "dwindle";
       };
 
@@ -155,6 +181,8 @@ in
         "XCURSOR_SIZE,24"
         "HYPRCURSOR_SIZE,24"
       ];
+
+      "source" = [ "~/.config/hypr/matugen/matugen-hyprland.conf" ];
 
       "$mod" = "SUPER";
 
