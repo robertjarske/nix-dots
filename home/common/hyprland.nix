@@ -28,13 +28,17 @@ in
     fi
   '';
 
-  xdg.configFile."hypr/hyprpaper.conf".text =
-    let wallpaper = "${config.home.homeDirectory}/Pictures/wallpapers/forest-mountain-cloudy-valley.png";
-    in ''
-      preload = ${wallpaper}
-      wallpaper = ,${wallpaper}
-      splash = false
-    '';
+  # Managed as a systemd user service so nixos-rebuild switch restarts it
+  # cleanly instead of killing the process and leaving no wallpaper.
+  services.hyprpaper = {
+    enable = true;
+    settings = {
+      splash = false;
+      ipc = true;
+      preload = [ "${config.home.homeDirectory}/Pictures/wallpapers/forest-mountain-cloudy-valley.png" ];
+      wallpaper = [ ",${config.home.homeDirectory}/Pictures/wallpapers/forest-mountain-cloudy-valley.png" ];
+    };
+  };
 
   xdg.configFile."hypr/hypridle.conf".text = ''
     general {
@@ -250,7 +254,6 @@ in
         "hyprpolkitagent"
         "nm-applet --indicator"
         "yubikey-touch-detector --libnotify"
-        "hyprpaper"
         "hypridle"
         "hyprpanel"
         "swaync"
