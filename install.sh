@@ -9,7 +9,7 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # ── Step 1: Keyboard layout ─────────────────────────────────────────────────
 echo "» Setting keyboard layout to sv-latin1..."
-loadkeys sv-latin1
+sudo loadkeys sv-latin1
 
 # ── Step 2: SSH ─────────────────────────────────────────────────────────────
 echo ""
@@ -89,4 +89,4 @@ rm -f /tmp/luks-password
 echo ""
 echo "✓ Install complete. Remove the USB drive."
 read -rp "» Reboot now? [Y/n] " do_reboot
-[[ "${do_reboot,,}" == "n" ]] || reboot
+[[ "${do_reboot,,}" == "n" ]] || sudo reboot
