@@ -25,7 +25,7 @@
         enable = true;
         style  = "slight";
       };
-      subpixelRendering = "rgb";
+      subpixel.rgba = "rgb";
     };
   };
 
