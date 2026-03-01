@@ -277,34 +277,13 @@ in
     if [ ! -f "$colors_file" ]; then
       mkdir -p "$(dirname "$colors_file")"
       cat > "$colors_file" << 'ROFI_COLORS'
- /* wallust template - colors-rofi */
-
+/* Catppuccin Mocha fallback (overwritten by matugen on wallpaper change) */
 * {
-active-background: #5B6460;
-active-foreground: #FDFDFD;
-normal-background: #242728;
-normal-foreground: #FDFDFD;
-urgent-background: #9C9D96;
-urgent-foreground: #FDFDFD;
-
-alternate-active-background: #757671;
-alternate-active-foreground: #FDFDFD;
-alternate-normal-background: #242728;
-alternate-normal-foreground: #FDFDFD;
-alternate-urgent-background: #242728;
-alternate-urgent-foreground: #FDFDFD;
-
-selected-active-background: #5B6460;
-selected-active-foreground: #FDFDFD;
-selected-normal-background: #F4F4F4;
-selected-normal-foreground: #FDFDFD;
-selected-urgent-background: #9C9D96;
-selected-urgent-foreground: #FDFDFD;
-
-background-color: #242728;
-background: rgba(0,0,0,0.7);
-foreground: #F4F4F4;
-border-color: #5B6460;
+    background:                 #1e1e2e;
+    foreground:                 #cdd6f4;
+    selected-active-background: #313244;
+    selected-urgent-background: #cba6f7;
+    selected-normal-background: #45475a;
 }
 ROFI_COLORS
     fi

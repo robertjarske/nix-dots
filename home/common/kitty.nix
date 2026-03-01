@@ -9,19 +9,24 @@
       mkdir -p "$(dirname "$colors_file")"
       cat > "$colors_file" << 'EOF'
 # Catppuccin Mocha (fallback until matugen runs)
-cursor                  #f5e0dc
-cursor_text_color       #1e1e2e
-foreground              #cdd6f4
-background              #1e1e2e
-selection_foreground    #cdd6f4
-selection_background    #313244
-url_color               #89b4fa
+cursor            #cdd6f4
+cursor_text_color #1e1e2e
+
+foreground           #cdd6f4
+background           #1e1e2e
+selection_foreground #cdd6f4
+selection_background #313244
+url_color            #89b4fa
 
 active_tab_background   #cba6f7
 active_tab_foreground   #1e1e2e
 inactive_tab_background #313244
 inactive_tab_foreground #cdd6f4
 tab_bar_background      #11111b
+tab_bar_margin_color    #11111b
+
+scrollbar_handle_color #cba6f7
+scrollbar_track_color  #313244
 
 color0  #45475a
 color8  #585b70
