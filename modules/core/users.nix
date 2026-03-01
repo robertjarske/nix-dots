@@ -10,10 +10,9 @@
       isNormalUser = true;
       extraGroups = [ "wheel" "networkmanager" "docker" ];
       shell = pkgs.zsh;
-      # Used on first boot before agenix can decrypt (host key not yet in secrets.nix).
-      # Change immediately after first login: passwd
+      # Set a real password with `passwd` after first login.
+      # mutableUsers = true (NixOS default) persists it across rebuilds.
       initialPassword = "changeme";
-      hashedPasswordFile = config.age.secrets.user-password.path;
     };
 
     security.sudo.wheelNeedsPassword = true;

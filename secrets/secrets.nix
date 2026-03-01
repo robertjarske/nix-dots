@@ -7,8 +7,6 @@ let
   # forge = "ssh-ed25519 AAAA...";  # add after first install
 in
 {
-  "user-password.age".publicKeys = masters ++ [ bastion ];
-
   "wifi-blackbox.age".publicKeys      = masters ++ [ bastion ]; # ++ [ forge ] after first install
   "wifi-blackbox-5g.age".publicKeys   = masters ++ [ bastion ];
   "wifi-blackbox-5g-2.age".publicKeys = masters ++ [ bastion ];
