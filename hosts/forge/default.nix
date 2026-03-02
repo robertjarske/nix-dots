@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  lib,
   ...
 }: {
   imports = [
@@ -30,25 +31,10 @@
     };
   };
 
-  # TODO: remove once nixpkgs ships NVIDIA 580.126.18+ (current: 580.119.02).
-  # Tracked at https://github.com/NixOS/nixpkgs/issues/489947
-  hardware.nvidia.package = let
-    base = config.boot.kernelPackages.nvidiaPackages.latest;
-    cachyos-nvidia-patch = pkgs.fetchpatch {
-      url = "https://raw.githubusercontent.com/CachyOS/CachyOS-PKGBUILDS/master/nvidia/nvidia-utils/kernel-6.19.patch";
-      sha256 = "sha256-YuJjSUXE6jYSuZySYGnWSNG5sfVei7vvxDcHx3K+IN4=";
-    };
-    driverAttr =
-      if config.hardware.nvidia.open
-      then "open"
-      else "bin";
-  in
-    base
-    // {
-      ${driverAttr} = base.${driverAttr}.overrideAttrs (oldAttrs: {
-        patches = (oldAttrs.patches or []) ++ [cachyos-nvidia-patch];
-      });
-    };
+  # Pin to LTS kernel — NVIDIA 580.119.02 is incompatible with 6.19.x
+  # (vm_flags read-only API + other breakage). Switch back to latest once
+  # nixpkgs ships 580.126.18+: https://github.com/NixOS/nixpkgs/issues/489947
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
 
   hardware.nvidia-container-toolkit.enable = true;
 
