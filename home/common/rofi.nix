@@ -9,266 +9,285 @@ in {
   home.packages = [pkgs.rofi];
 
   xdg.configFile."rofi/master-config.rasi".text = ''
-    /* Master Config 1440p */
+    /* Master Config — style-14 adapted for matugen */
 
-    /* ---- Configuration ---- */
     configuration {
-    	font:						"Fira Code SemiBold 13";
-    	modi:                       "drun,run,filebrowser";
-        show-icons:                 true;
-        display-drun:               "Apps";
-        display-run:                "Run";
-        display-filebrowser:        "Files";
-        display-window:             "Windows";
-    	drun-display-format:        "{name}";
-    	hover-select:               true;
-    	me-select-entry:            "MouseSecondary";
-        me-accept-entry:            "MousePrimary";
-    	window-format:              "{w} · {c} · {t}";
-    	dpi:						1;
+        font:                 "Fira Code SemiBold 13";
+        modi:                 "drun,run,filebrowser,window";
+        show-icons:           true;
+        display-drun:         " Apps";
+        display-run:          " Run";
+        display-filebrowser:  " Files";
+        display-window:       " Windows";
+        drun-display-format:  "{name} [<span weight='light' size='small'><i>({generic})</i></span>]";
+        hover-select:         true;
+        me-select-entry:      "MouseSecondary";
+        me-accept-entry:      "MousePrimary";
+        window-format:        "{w} · {c} · {t}";
+        dpi:                  1;
     }
 
     /* ---- Load matugen colors (generated at runtime from wallpaper) ---- */
     @theme "~/.config/rofi/matugen/colors-rofi.rasi"
 
-    /* ---- Global Properties ---- */
+    /* ---- Map matugen's 5 vars to style-14's full color semantics ---- */
     * {
-        background-alt:              @selected-active-background;
-        selected:                    @selected-urgent-background;
-        active:                      @selected-normal-background;
-        urgent:                      @selected;
+        /* matugen source vars:
+             background                → dark surface
+             foreground                → light text
+             selected-active-background  → elevated surface (bg-alt)
+             selected-urgent-background  → accent / primary
+             selected-normal-background  → secondary container   */
 
-        text-selected:               @background;
-        text-color:                  @foreground;
-        border-color:                @selected;
+        border-colour:               @selected-urgent-background;
+        handle-colour:               @selected-urgent-background;
+        background-colour:           @background;
+        foreground-colour:           @foreground;
+        alternate-background:        @selected-active-background;
+
+        normal-background:           @background;
+        normal-foreground:           @foreground;
+        urgent-background:           @selected-urgent-background;
+        urgent-foreground:           @background;
+        active-background:           @selected-normal-background;
+        active-foreground:           @background;
+
+        selected-normal-background:  @selected-urgent-background;
+        selected-normal-foreground:  @background;
+        selected-urgent-background:  @selected-normal-background;
+        selected-urgent-foreground:  @background;
+        selected-active-background:  @selected-urgent-background;
+        selected-active-foreground:  @background;
+
+        alternate-normal-background: @background;
+        alternate-normal-foreground: @foreground;
+        alternate-urgent-background: @selected-urgent-background;
+        alternate-urgent-foreground: @background;
+        alternate-active-background: @selected-normal-background;
+        alternate-active-foreground: @background;
+
+        /* Layout sizing — override per-resolution in config.rasi */
+        screen-margin:   150px 300px;
+        box-spacing:     15px;
+        list-padding:    8px;
+        element-padding: 12px;
+        element-radius:  8px;
+        element-spacing: 12px;
     }
 
-    /* ---- Window ---- */
+    /* ---- Window (fullscreen overlay) ---- */
     window {
-        enabled:                    true;
-        fullscreen:                 false;
-        transparency:               "real";
-        cursor:                     "default";
-        spacing:                    0px;
-        border:                     4px 0px 4px 0px;
-        border-radius:              30px;
-        location:                   center;
-        anchor:                     center;
-
-        width:                      50%;
-        background-color:           @background;
+        enabled:          true;
+        fullscreen:       true;
+        transparency:     "real";
+        location:         center;
+        anchor:           center;
+        border:           0px solid;
+        border-radius:    0px;
+        border-color:     var(border-colour);
+        cursor:           "default";
+        background-color: var(background-colour);
     }
 
-    /* ----- Main Box ----- */
+    /* ---- Main Box ---- */
     mainbox {
-    	padding:					 15px;
-        enabled:                     true;
-        orientation:                 vertical;
-        children:                    [ "inputbar", "listbox" ];
-        background-color:            @background;
+        enabled:          true;
+        spacing:          var(box-spacing);
+        margin:           var(screen-margin);
+        padding:          0px;
+        border:           0px solid;
+        border-color:     var(border-colour);
+        background-color: transparent;
+        children:         [ "inputbar", "message", "listview" ];
     }
 
     /* ---- Inputbar ---- */
     inputbar {
-        enabled:                     true;
-        padding:                     10px 10px 100px 10px;
-        margin:                      10px;
-        background-color:            transparent;
-        border-radius:               25px;
-        orientation:                 horizontal;
-        children:                    ["entry", "dummy", "mode-switcher" ];
-        background-image:            url("~/.config/rofi/.current_wallpaper", width);
+        enabled:          true;
+        spacing:          0px;
+        padding:          0px;
+        border:           0px solid;
+        border-radius:    var(element-radius);
+        border-color:     var(border-colour);
+        background-color: transparent;
+        text-color:       var(foreground-colour);
+        children:         [ "textbox-prompt-colon", "entry", "num-filtered-rows", "textbox-num-sep", "num-rows", "mode-switcher" ];
     }
 
-    /* ---- Entry input ---- */
+    textbox-prompt-colon {
+        enabled:          true;
+        expand:           false;
+        padding:          var(element-padding);
+        str:              " ";
+        font:             "FiraCode Nerd Font 13";
+        border:           0px solid;
+        border-radius:    var(element-radius);
+        border-color:     var(border-colour);
+        background-color: var(alternate-background);
+        text-color:       var(foreground-colour);
+    }
+
     entry {
-        enabled:                     true;
-        expand:                      false;
-        width:                       20%;
-        padding:                     10px;
-        border-radius:               12px;
-        background-color:            @selected;
-        text-color:                  @text-selected;
-        cursor:                      text;
-        placeholder:                 "🖥️ Search ";
-        placeholder-color:           inherit;
+        enabled:           true;
+        expand:            true;
+        padding:           var(element-padding);
+        background-color:  @alternate-background;
+        text-color:        @foreground-colour;
+        cursor:            text;
+        placeholder:       "Search...";
+        placeholder-color: inherit;
     }
 
-    /* ---- Listbox ---- */
-    listbox {
-        spacing:                     10px;
-        padding:                     10px;
-        background-color:            transparent;
-        orientation:                 vertical;
-        children:                    [ "message", "listview" ];
+    num-filtered-rows {
+        enabled:          true;
+        expand:           false;
+        padding:          var(element-padding);
+        background-color: var(alternate-background);
+        text-color:       var(foreground-colour);
+    }
+    textbox-num-sep {
+        enabled:          true;
+        expand:           false;
+        str:              "/";
+        padding:          0px 12px 0px 0px;
+        background-color: var(alternate-background);
+        text-color:       var(foreground-colour);
+    }
+    num-rows {
+        enabled:          true;
+        expand:           false;
+        padding:          0px 12px 0px 0px;
+        background-color: var(alternate-background);
+        text-color:       var(foreground-colour);
+    }
+
+    /* ---- Mode Switcher ---- */
+    mode-switcher {
+        enabled:          true;
+        spacing:          var(box-spacing);
+        border:           0px solid;
+        border-color:     var(border-colour);
+        background-color: transparent;
+        text-color:       var(foreground-colour);
+    }
+    button {
+        padding:          var(element-padding);
+        width:            100px;
+        border:           0px solid;
+        border-radius:    var(element-radius);
+        border-color:     var(border-colour);
+        background-color: var(alternate-background);
+        text-color:       var(foreground-colour);
+        cursor:           pointer;
+    }
+    button selected {
+        background-color: var(selected-normal-background);
+        text-color:       var(selected-normal-foreground);
     }
 
     /* ---- Listview ---- */
     listview {
-        enabled:                     true;
-        columns:                     2;
-        lines:                       6;
-        cycle:                       true;
-        dynamic:                     true;
-        scrollbar:                   true;
-        layout:                      vertical;
-        reverse:                     false;
-        fixed-height:                false;
-        fixed-columns:               true;
-        spacing:                     10px;
-        background-color:            transparent;
-        border:                      0px;
+        enabled:          true;
+        columns:          1;
+        lines:            10;
+        cycle:            true;
+        dynamic:          true;
+        scrollbar:        true;
+        layout:           vertical;
+        reverse:          false;
+        fixed-height:     true;
+        fixed-columns:    true;
+        spacing:          var(box-spacing);
+        border:           0px solid;
+        border-color:     var(border-colour);
+        background-color: transparent;
+        text-color:       var(foreground-colour);
+        cursor:           "default";
     }
 
-    /* ---- Dummy ---- */
-    dummy {
-        expand:                      true;
-        background-color:            transparent;
-    }
-
-    /* ---- Mode Switcher ---- */
-    mode-switcher{
-        enabled:                     true;
-        spacing:                     10px;
-        background-color:            transparent;
-    }
-    button {
-        width:                       5%;
-        padding:                     12px;
-        border-radius:               12px;
-        background-color:            @text-selected;
-        text-color:                  @text-color;
-        cursor:                      pointer;
-    }
-    button selected {
-        background-color:            @selected;
-        text-color:                  @text-selected;
-    }
-
-    /* ---- Scrollbar ---- */
     scrollbar {
-        width:        4px;
-        border:       0;
-        handle-color: @border-color;
-        handle-width: 8px;
-        padding:      0;
+        handle-width:     8px;
+        handle-color:     var(handle-colour);
+        border-radius:    var(element-radius);
+        background-color: var(alternate-background);
     }
 
     /* ---- Elements ---- */
     element {
-        enabled:                     true;
-        spacing:                     10px;
-        padding:                     10px;
-        border-radius:               12px;
-        background-color:            transparent;
-        cursor:                      pointer;
+        enabled:          true;
+        spacing:          var(element-spacing);
+        padding:          var(list-padding);
+        border:           0px solid;
+        border-radius:    var(element-radius);
+        border-color:     var(border-colour);
+        background-color: transparent;
+        text-color:       var(foreground-colour);
+        cursor:           pointer;
     }
 
-    element normal.normal {
-        background-color:            inherit;
-        text-color:                  inherit;
-    }
-    element normal.urgent {
-        background-color:            @urgent;
-        text-color:                  @foreground;
-    }
-    element normal.active {
-        background-color:            @active;
-        text-color:                  @foreground;
-    }
-    element selected.normal {
-        border:                      1px 6px 1px 6px;
-        border-radius:               16px;
-        border-color:                @selected;
-        background-color:            transparent;
-        text-color:                  @selected;
-    }
-    element selected.urgent {
-        background-color:            @urgent;
-        text-color:                  @text-selected;
-    }
-    element selected.active {
-        background-color:            @urgent;
-        text-color:                  @text-selected;
-    }
-    element alternate.normal {
-        background-color:            transparent;
-        text-color:                  inherit;
-    }
-    element alternate.urgent {
-        background-color:            transparent;
-        text-color:                  inherit;
-    }
-    element alternate.active {
-        background-color:            transparent;
-        text-color:                  inherit;
-    }
+    element normal.normal          { background-color: var(normal-background);           text-color: var(normal-foreground);           }
+    element normal.urgent          { background-color: var(urgent-background);           text-color: var(urgent-foreground);           }
+    element normal.active          { background-color: var(active-background);           text-color: var(active-foreground);           }
+    element selected.normal        { background-color: var(selected-normal-background);  text-color: var(selected-normal-foreground);  }
+    element selected.urgent        { background-color: var(selected-urgent-background);  text-color: var(selected-urgent-foreground);  }
+    element selected.active        { background-color: var(selected-active-background);  text-color: var(selected-active-foreground);  }
+    element alternate.normal       { background-color: var(alternate-normal-background); text-color: var(alternate-normal-foreground); }
+    element alternate.urgent       { background-color: var(alternate-urgent-background); text-color: var(alternate-urgent-foreground); }
+    element alternate.active       { background-color: var(alternate-active-background); text-color: var(alternate-active-foreground); }
+
     element-icon {
-        background-color:            transparent;
-        text-color:                  inherit;
-        cursor:                      inherit;
+        background-color: transparent;
+        text-color:       inherit;
+        size:             32px;
+        cursor:           inherit;
     }
     element-text {
-        font:						"Fira Code SemiBold 16";
-        background-color:            transparent;
-        text-color:                  inherit;
-        cursor:                      inherit;
-        vertical-align:              0.5;
-        horizontal-align:            0.0;
+        background-color: transparent;
+        text-color:       inherit;
+        highlight:        inherit;
+        cursor:           inherit;
+        vertical-align:   0.5;
+        horizontal-align: 0.0;
     }
 
     /* ---- Message ---- */
     message {
-        background-color:            transparent;
-        border:                      0px;
+        enabled:          true;
+        padding:          0px;
+        border:           0px solid;
+        border-color:     var(border-colour);
+        background-color: transparent;
+        text-color:       var(foreground-colour);
     }
     textbox {
-        padding:                     12px;
-        border-radius:               10px;
-        background-color:            @background-alt;
-        text-color:                  @background;
-        vertical-align:              0.5;
-        horizontal-align:            0.0;
+        padding:          var(element-padding);
+        border:           0px solid;
+        border-radius:    var(element-radius);
+        border-color:     var(border-colour);
+        background-color: var(alternate-background);
+        text-color:       var(foreground-colour);
+        vertical-align:   0.5;
+        horizontal-align: 0.0;
+        highlight:        none;
+        blink:            true;
+        markup:           true;
     }
     error-message {
-        padding:                     12px;
-        border-radius:               20px;
-        background-color:            @background-alt;
-        text-color:                  @background;
+        padding:          var(element-padding);
+        border:           0px solid;
+        border-color:     var(border-colour);
+        background-color: var(background-colour);
+        text-color:       var(foreground-colour);
     }
   '';
 
-  # Per-resolution overrides for 1440p (imported over master-config)
+  # Per-resolution overrides for 1440p external monitors
   xdg.configFile."rofi/config.rasi".text = ''
     @import "~/.config/rofi/master-config.rasi"
 
-    window {
-        width: 60%;
-    }
-    entry {
-        width: 18%;
-    }
-    button {
-        width: 110px;
-    }
-    listview {
-      columns: 6;
-      lines: 4;
-      fixed-height: true;
-    }
-    element {
-      orientation: vertical;
-      padding: 12px 0px 0px 0px;
-      spacing: 6px;
-      border-radius: 12px;
-    }
-    element-icon {
-      size: 5%;
-    }
-    element-text {
-      font: "Fira Code SemiBold 12";
-      vertical-align: 0.5;
-      horizontal-align: 0.5;
+    /* Tighter margins on 1440p — keeps the panel as a focused strip */
+    mainbox {
+        margin: 200px 750px;
     }
   '';
 
