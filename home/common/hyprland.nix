@@ -46,32 +46,35 @@
     '';
   };
 in {
-  home.packages = [wallpaper-change];
-  # Catppuccin Mocha fallback so `source` doesn't error on first boot before
-  # matugen has run. Only the variables actually used in the config are needed.
-  home.activation.hyprlandColorsFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        colors_file="${config.home.homeDirectory}/.config/hypr/matugen/matugen-hyprland.conf"
-        if [ ! -f "$colors_file" ]; then
-          mkdir -p "$(dirname "$colors_file")"
-          cat > "$colors_file" << 'EOF'
-    $primary = rgba(cba6f7ff)
-    $tertiary = rgba(94e2d5ff)
-    $outline_variant = rgba(313244ff)
-    EOF
+  home = {
+    packages = [wallpaper-change];
+    activation = {
+      # Catppuccin Mocha fallback so `source` doesn't error on first boot before
+      # matugen has run. Only the variables actually used in the config are needed.
+      hyprlandColorsFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
+            colors_file="${config.home.homeDirectory}/.config/hypr/matugen/matugen-hyprland.conf"
+            if [ ! -f "$colors_file" ]; then
+              mkdir -p "$(dirname "$colors_file")"
+              cat > "$colors_file" << 'EOF'
+        $primary = rgba(cba6f7ff)
+        $tertiary = rgba(94e2d5ff)
+        $outline_variant = rgba(313244ff)
+        EOF
+            fi
+      '';
+      syncWallpapers = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        wallpapers_dir="${config.home.homeDirectory}/Pictures/wallpapers"
+        mkdir -p "$(dirname "$wallpapers_dir")"
+        if [ -d "$wallpapers_dir" ]; then
+          ${pkgs.git}/bin/git -C "$wallpapers_dir" pull --ff-only \
+            || echo "wallpaper-sync: git pull failed (offline?), using cached wallpapers"
+        else
+          ${pkgs.git}/bin/git clone https://github.com/robertjarske/wallpapers "$wallpapers_dir" \
+            || echo "wallpaper-sync: initial clone failed (offline?), hyprpaper fallback will be used until next rebuild with network"
         fi
-  '';
-
-  home.activation.syncWallpapers = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    wallpapers_dir="${config.home.homeDirectory}/Pictures/wallpapers"
-    mkdir -p "$(dirname "$wallpapers_dir")"
-    if [ -d "$wallpapers_dir" ]; then
-      ${pkgs.git}/bin/git -C "$wallpapers_dir" pull --ff-only \
-        || echo "wallpaper-sync: git pull failed (offline?), using cached wallpapers"
-    else
-      ${pkgs.git}/bin/git clone https://github.com/robertjarske/wallpapers "$wallpapers_dir" \
-        || echo "wallpaper-sync: initial clone failed (offline?), hyprpaper fallback will be used until next rebuild with network"
-    fi
-  '';
+      '';
+    };
+  };
 
   # Managed as a systemd user service so nixos-rebuild switch restarts it
   # cleanly instead of killing the process and leaving no wallpaper.

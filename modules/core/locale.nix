@@ -1,4 +1,4 @@
-{...}: {
+_: {
   time.timeZone = "Europe/Stockholm";
 
   i18n = {

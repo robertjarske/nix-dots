@@ -20,11 +20,14 @@
     ../../modules/dev/php.nix
   ];
 
-  host.secureboot.enable = true;
-
-  # NVIDIA PRIME offload — verify bus IDs with: lspci | grep -E "VGA|3D"
-  host.nvidia.intelBusId = "PCI:0:2:0";
-  host.nvidia.nvidiaBusId = "PCI:1:0:0";
+  host = {
+    secureboot.enable = true;
+    # NVIDIA PRIME offload — verify bus IDs with: lspci | grep -E "VGA|3D"
+    nvidia = {
+      intelBusId = "PCI:0:2:0";
+      nvidiaBusId = "PCI:1:0:0";
+    };
+  };
 
   # TODO: remove once nixpkgs ships NVIDIA 580.126.18+ (current: 580.119.02).
   # Tracked at https://github.com/NixOS/nixpkgs/issues/489947
@@ -58,29 +61,31 @@
     mode = "0600";
   };
 
-  # Derive work_ad.pub from the private key (not sensitive, not an agenix secret).
-  system.activationScripts.work-ssh-ad-pubkey = {
-    deps = ["agenix"];
-    text = ''
-      if [ -e /home/serobja/.ssh/work_ad ]; then
-        ${pkgs.openssh}/bin/ssh-keygen -y -f /home/serobja/.ssh/work_ad \
-          > /home/serobja/.ssh/work_ad.pub 2>/dev/null || true
-        chmod 644 /home/serobja/.ssh/work_ad.pub
-      fi
-    '';
-  };
+  system.activationScripts = {
+    # Derive work_ad.pub from the private key (not sensitive, not an agenix secret).
+    work-ssh-ad-pubkey = {
+      deps = ["agenix"];
+      text = ''
+        if [ -e /home/serobja/.ssh/work_ad ]; then
+          ${pkgs.openssh}/bin/ssh-keygen -y -f /home/serobja/.ssh/work_ad \
+            > /home/serobja/.ssh/work_ad.pub 2>/dev/null || true
+          chmod 644 /home/serobja/.ssh/work_ad.pub
+        fi
+      '';
+    };
 
-  system.activationScripts.nm-work-wifi-setup = {
-    deps = ["agenix"];
-    text = ''
-      mkdir -p /etc/NetworkManager/system-connections
-      install -m 0600 -o root -g root ${config.age.secrets.work-wifi.path} \
-        /etc/NetworkManager/system-connections/Work-WiFi.nmconnection
+    nm-work-wifi-setup = {
+      deps = ["agenix"];
+      text = ''
+        mkdir -p /etc/NetworkManager/system-connections
+        install -m 0600 -o root -g root ${config.age.secrets.work-wifi.path} \
+          /etc/NetworkManager/system-connections/Work-WiFi.nmconnection
 
-      if ${pkgs.networkmanager}/bin/nmcli -t general status > /dev/null 2>&1; then
-        ${pkgs.networkmanager}/bin/nmcli connection reload
-      fi
-    '';
+        if ${pkgs.networkmanager}/bin/nmcli -t general status > /dev/null 2>&1; then
+          ${pkgs.networkmanager}/bin/nmcli connection reload
+        fi
+      '';
+    };
   };
 
   environment.systemPackages = with pkgs; [

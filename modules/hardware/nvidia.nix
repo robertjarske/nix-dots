@@ -34,8 +34,7 @@
           enable = true;
           enableOffloadCmd = true;
         };
-        intelBusId = config.host.nvidia.intelBusId;
-        nvidiaBusId = config.host.nvidia.nvidiaBusId;
+        inherit (config.host.nvidia) intelBusId nvidiaBusId;
       };
     };
 

@@ -24,30 +24,32 @@
 
   config = lib.mkMerge [
     {
-      boot.loader = {
-        systemd-boot = {
-          enable = true;
-          configurationLimit = 15;
-          consoleMode = "auto";
+      boot = {
+        loader = {
+          systemd-boot = {
+            enable = true;
+            configurationLimit = 15;
+            consoleMode = "auto";
+          };
+          efi.canTouchEfiVariables = true;
         };
-        efi.canTouchEfiVariables = true;
-      };
 
-      boot.initrd = {
-        systemd.enable = true;
+        initrd = {
+          systemd.enable = true;
 
-        luks.devices."cryptroot" = {
-          device = "/dev/disk/by-partlabel/disk-main-luks";
-          allowDiscards = true;
-          crypttabExtraOpts = [
-            "fido2-device=auto"
-            "token-timeout=30"
-          ];
+          luks.devices."cryptroot" = {
+            device = "/dev/disk/by-partlabel/disk-main-luks";
+            allowDiscards = true;
+            crypttabExtraOpts = [
+              "fido2-device=auto"
+              "token-timeout=30"
+            ];
+          };
         };
-      };
 
-      boot.kernelPackages = pkgs.linuxPackages_latest;
-      boot.resumeDevice = "/dev/mapper/cryptroot";
+        kernelPackages = pkgs.linuxPackages_latest;
+        resumeDevice = "/dev/mapper/cryptroot";
+      };
 
       specialisation.lts.configuration = {
         boot.kernelPackages = lib.mkForce pkgs.linuxPackages;

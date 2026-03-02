@@ -3,19 +3,19 @@
   pkgs,
   ...
 }: {
-  age.secrets.work-root-ca = {
-    file = ../../secrets/work-root-ca.age;
-    mode = "0444";
-  };
-
-  age.secrets.work-dev-ca = {
-    file = ../../secrets/work-dev-ca.age;
-    mode = "0444";
-  };
-
-  age.secrets.work-ike-ca = {
-    file = ../../secrets/work-ike-ca.age;
-    mode = "0444";
+  age.secrets = {
+    work-root-ca = {
+      file = ../../secrets/work-root-ca.age;
+      mode = "0444";
+    };
+    work-dev-ca = {
+      file = ../../secrets/work-dev-ca.age;
+      mode = "0444";
+    };
+    work-ike-ca = {
+      file = ../../secrets/work-ike-ca.age;
+      mode = "0444";
+    };
   };
 
   system.activationScripts.work-ca-bundle = {

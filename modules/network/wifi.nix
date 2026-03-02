@@ -3,10 +3,12 @@
   pkgs,
   ...
 }: {
-  age.secrets.wifi-blackbox.file = ../../secrets/wifi-blackbox.age;
-  age.secrets.wifi-blackbox-5g.file = ../../secrets/wifi-blackbox-5g.age;
-  age.secrets.wifi-blackbox-5g-2.file = ../../secrets/wifi-blackbox-5g-2.age;
-  age.secrets.wifi-blackbox-6g.file = ../../secrets/wifi-blackbox-6g.age;
+  age.secrets = {
+    wifi-blackbox.file = ../../secrets/wifi-blackbox.age;
+    wifi-blackbox-5g.file = ../../secrets/wifi-blackbox-5g.age;
+    wifi-blackbox-5g-2.file = ../../secrets/wifi-blackbox-5g-2.age;
+    wifi-blackbox-6g.file = ../../secrets/wifi-blackbox-6g.age;
+  };
 
   system.activationScripts.nm-wifi-setup = {
     deps = ["agenix"];

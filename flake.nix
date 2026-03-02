@@ -104,10 +104,12 @@
             host.disk = disk;
             networking.hostName = hostname;
 
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = {inherit hyprpanel vscodeExtensions;};
-            home-manager.users.${username} = homeModule;
+            home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+              extraSpecialArgs = {inherit hyprpanel vscodeExtensions;};
+              users.${username} = homeModule;
+            };
           }
         ];
       };

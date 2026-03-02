@@ -10,9 +10,11 @@
     no-negcache
   '';
 
-  age.secrets.work-dns-domains.file = ../../secrets/work-dns-domains.age;
-  age.secrets.dns-development.file = ../../secrets/dns-development.age;
-  age.secrets.dns-production.file = ../../secrets/dns-production.age;
+  age.secrets = {
+    work-dns-domains.file = ../../secrets/work-dns-domains.age;
+    dns-development.file = ../../secrets/dns-development.age;
+    dns-production.file = ../../secrets/dns-production.age;
+  };
 
   system.activationScripts.nm-dns-setup = {
     deps = ["agenix"];
