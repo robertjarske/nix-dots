@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  lib,
   ...
 }: {
   imports = [
@@ -34,7 +33,7 @@
   # Pin to LTS kernel — NVIDIA 580.119.02 is incompatible with 6.19.x
   # (vm_flags read-only API + other breakage). Switch back to latest once
   # nixpkgs ships 580.126.18+: https://github.com/NixOS/nixpkgs/issues/489947
-  boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
+  boot.kernelPackages = pkgs.linuxPackages;
 
   hardware.nvidia-container-toolkit.enable = true;
 
