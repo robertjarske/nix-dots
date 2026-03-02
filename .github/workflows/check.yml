@@ -10,7 +10,7 @@ jobs:
         with:
           ref: ${{ github.base_ref }}
           path: .base
-      - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: DeterminateSystems/nix-installer-action@v21
       - uses: DeterminateSystems/magic-nix-cache-action@v13
       - name: Lint (statix)
         run: nix run nixpkgs#statix -- check .
