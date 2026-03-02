@@ -11,7 +11,7 @@
 
 ---
 
-## Steps 1–7 — Automated
+## Steps 1–8 — Automated
 
 Clone the repo from the live ISO and run the install script:
 
@@ -22,13 +22,14 @@ git clone https://github.com/robertjarske/nix-dots /tmp/setup
 
 The script handles:
 1. Swedish keyboard layout
-2. WiFi (optional, via nmtui)
-3. SSH — starts sshd and prints the IP so you can `scp` from a second device
-4. LUKS fallback passphrase (prompted, written to `/tmp/luks-password`)
-5. Disko — partitions and formats the disk (destructive, confirms before running)
-6. Hardware configuration — generates it and pauses for you to commit it to the repo
-7. `nixos-install` — clones a fresh copy of the repo and installs
-8. Cleanup and reboot
+2. SSH — starts sshd and prints the IP so you can `scp` from a second device
+3. LUKS fallback passphrase (prompted, store it in 1Password)
+4. Disko — partitions and formats the disk (destructive, confirms before running)
+5. Hardware configuration — generates it and pauses for you to commit it to the repo
+6. SSH host key — pre-generates the host key, shows it, and pauses so you can add it to `secrets/secrets.nix`, rekey, and push **from your second device** before the install continues
+7. Secure Boot keys — creates sbctl keys and copies them to the target system
+8. `nixos-install` — pulls latest changes, verifies hardware config, installs
+9. Cleanup and reboot
 
 **Hardware config step:** the script pauses and prints an `scp` command. On your second device:
 
@@ -37,17 +38,17 @@ scp nixos@<ip>:/mnt/etc/nixos/hardware-configuration.nix .
 # copy to hosts/<hostname>/hardware-configuration.nix, commit, push
 ```
 
-Then press Enter in the script to continue.
+**Rekey step:** the script pauses again after generating the host key and prints exact instructions. On your second device: add the key to `secrets/secrets.nix`, run `nix run .#rekey`, commit and push. Then press Enter in the script.
 
 ---
 
-## Step 8 — First boot
+## Step 9 — First boot
 
-At the LUKS prompt enter the passphrase from Step 4.
+At the LUKS prompt enter the passphrase from Step 3.
 
 Login at the console:
 - user: `gast` (bastion) or `serobja` (forge)
-- password: `changeme` (temporary `initialPassword` — active until agenix can decrypt)
+- password: `changeme` (temporary `initialPassword` — active until agenix decrypts)
 
 Change it immediately:
 
@@ -56,23 +57,25 @@ passwd
 ```
 
 > **Note:** The real password is stored in `user-password.age`. Once you complete the
-> post-install steps (add host key → rekey → rebuild), agenix takes over and
-> `hashedPasswordFile` supersedes `initialPassword`.
+> post-install steps (host key was added to secrets during install → rebuild), agenix
+> takes over and `hashedPasswordFile` supersedes `initialPassword`.
 
 ---
 
-## Step 9 — Verify rebuild works
+## Step 10 — Rebuild
 
 ```bash
 cd ~
-git clone https://github.com/robertjarske/nix-dots
-cd nix-dots
+git clone https://github.com/robertjarske/nix-dots ~/code/nix-dots
+cd ~/code/nix-dots
 sudo nixos-rebuild switch --flake .#<hostname>
 ```
 
+Secrets were already rekeyed during install (step 6), so this should succeed on the first try.
+
 ---
 
-## Step 10 — Enable hibernation
+## Step 11 — Enable hibernation
 
 Get the resume offset for the BTRFS swapfile:
 
@@ -90,20 +93,15 @@ Commit, push, and rebuild. **Must be done before the machine first suspends.**
 
 ---
 
-## Step 11 — Enable Secure Boot (Lanzaboote)
+## Step 12 — Enable Secure Boot (Lanzaboote)
 
-Keys are stored at `/var/lib/sbctl`. `sbctl` is not installed before the first rebuild and lanzaboote fails without keys — use `nix shell` first.
+Secure Boot keys were created during install (step 7) and are already at `/var/lib/sbctl`.
+The first rebuild (step 10) signed the boot files. Start from Part B.
 
-### Part A — Create keys and rebuild
+### Part A — Verify signing
 
 ```bash
-nix shell nixpkgs#sbctl
-sudo sbctl create-keys
-exit
-
-sudo nixos-rebuild switch --flake .#<hostname>
-
-# Verify — unsigned kernels under /boot/EFI/nixos/ are expected and fine
+# All NixOS boot files should be signed
 sudo sbctl verify
 ```
 
@@ -147,7 +145,7 @@ bootctl status       # Secure Boot: enabled (deployed)
 
 ---
 
-## Step 12 — Enroll YubiKeys for FIDO2 LUKS unlock
+## Step 13 — Enroll YubiKeys for FIDO2 LUKS unlock
 
 ```bash
 # Enroll YubiKey #1 (plug in first)
