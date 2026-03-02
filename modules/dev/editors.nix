@@ -1,8 +1,14 @@
-{unstable, ...}: {
+{
+  unstable,
+  neovimNightly,
+  pkgs,
+  ...
+}: {
   environment.systemPackages = [
-    unstable.neovim
+    neovimNightly
     unstable.vscode
     unstable.claude-code
+    pkgs.gcc # required by nvim-treesitter to compile parsers
   ];
 
   environment.variables = {

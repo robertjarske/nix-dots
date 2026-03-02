@@ -16,8 +16,8 @@
     };
 
     iconTheme = {
-      name = "Adwaita";
-      package = pkgs.adwaita-icon-theme;
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
     };
 
     gtk3.extraConfig.gtk-application-prefer-dark-theme = true;
@@ -37,5 +37,6 @@
   dconf.settings."org/gnome/desktop/interface" = {
     color-scheme = "prefer-dark";
     gtk-theme = "catppuccin-mocha-mauve-standard";
+    icon-theme = "Papirus-Dark";
   };
 }

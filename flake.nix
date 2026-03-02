@@ -35,6 +35,8 @@
       url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
   };
 
   outputs = {
@@ -46,6 +48,7 @@
     hyprpanel,
     nix-vscode-extensions,
     lanzaboote,
+    neovim-nightly-overlay,
     ...
   }: let
     system = "x86_64-linux";
@@ -54,6 +57,8 @@
       inherit system;
       config.allowUnfree = true;
     };
+
+    neovimNightly = neovim-nightly-overlay.packages.${system}.default;
 
     # Apply overlay + allowUnfree on the same pkgs instance (required for unfree extensions).
     vscodeExtensions =
@@ -72,7 +77,7 @@
     }:
       nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = {inherit agenix unstable;};
+        specialArgs = {inherit agenix unstable neovimNightly;};
         modules = [
           disko.nixosModules.disko
           home-manager.nixosModules.home-manager

@@ -31,15 +31,16 @@
       <* endfor *>
     '';
 
-    # Rofi variables must match the names referenced in master-config.rasi.
-    # Only these 5 are needed — master-config.rasi derives all other aliases from them.
+    # Rofi color palette
+    # master-config.rasi references these with var(background), var(selected), etc.
     "matugen/templates/colors-rofi.rasi".text = ''
       * {
-          background:                 {{colors.surface.default.hex}};
-          foreground:                 {{colors.on_surface.default.hex}};
-          selected-active-background: {{colors.primary_container.default.hex}};
-          selected-urgent-background: {{colors.primary.default.hex}};
-          selected-normal-background: {{colors.surface_container_high.default.hex}};
+          background:     {{colors.surface.default.hex}};
+          background-alt: {{colors.primary_container.default.hex}};
+          foreground:     {{colors.on_surface.default.hex}};
+          selected:       {{colors.primary.default.hex}};
+          active:         {{colors.surface_container_high.default.hex}};
+          urgent:         {{colors.error.default.hex}};
       }
     '';
 

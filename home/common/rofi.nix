@@ -8,11 +8,26 @@
 in {
   home.packages = [pkgs.rofi];
 
-  xdg.configFile."rofi/master-config.rasi".text = ''
-    /* Master Config — style-14 adapted for matugen */
+  # Hide rofi's own entries from the app launcher
+  xdg.dataFile."applications/rofi.desktop".text = ''
+    [Desktop Entry]
+    Type=Application
+    Name=Rofi
+    NoDisplay=true
+  '';
+  xdg.dataFile."applications/rofi-theme-selector.desktop".text = ''
+    [Desktop Entry]
+    Type=Application
+    Name=Rofi Theme Selector
+    NoDisplay=true
+  '';
 
+  xdg.configFile."rofi/master-config.rasi".text = ''
+    /* Rofi config */
+
+    /*****----- Configuration -----*****/
     configuration {
-        font:                 "Fira Code SemiBold 13";
+        font:                 "Fira Code SemiBold 8";
         modi:                 "drun,run,filebrowser,window";
         show-icons:           true;
         display-drun:         " Apps";
@@ -27,47 +42,37 @@ in {
         dpi:                  1;
     }
 
-    /* ---- Load matugen colors (generated at runtime from wallpaper) ---- */
-    @theme "~/.config/rofi/matugen/colors-rofi.rasi"
+    /*****----- Load matugen colors -----*****/
+    @import "~/.config/rofi/matugen/colors-rofi.rasi"
 
-    /* ---- Map matugen's 5 vars to style-14's full color semantics ---- */
+    /*****----- Global Properties -----*****/
     * {
-        /* matugen source vars:
-             background                → dark surface
-             foreground                → light text
-             selected-active-background  → elevated surface (bg-alt)
-             selected-urgent-background  → accent / primary
-             selected-normal-background  → secondary container   */
-
-        border-colour:               @selected-urgent-background;
-        handle-colour:               @selected-urgent-background;
-        background-colour:           @background;
-        foreground-colour:           @foreground;
-        alternate-background:        @selected-active-background;
-
-        normal-background:           @background;
-        normal-foreground:           @foreground;
-        urgent-background:           @selected-urgent-background;
-        urgent-foreground:           @background;
-        active-background:           @selected-normal-background;
-        active-foreground:           @background;
-
-        selected-normal-background:  @selected-urgent-background;
-        selected-normal-foreground:  @background;
-        selected-urgent-background:  @selected-normal-background;
-        selected-urgent-foreground:  @background;
-        selected-active-background:  @selected-urgent-background;
-        selected-active-foreground:  @background;
-
-        alternate-normal-background: @background;
-        alternate-normal-foreground: @foreground;
-        alternate-urgent-background: @selected-urgent-background;
-        alternate-urgent-foreground: @background;
-        alternate-active-background: @selected-normal-background;
-        alternate-active-foreground: @background;
+        border-colour:               var(selected);
+        handle-colour:               var(selected);
+        background-colour:           var(background);
+        foreground-colour:           var(foreground);
+        alternate-background:        var(background-alt);
+        normal-background:           var(background);
+        normal-foreground:           var(foreground);
+        urgent-background:           var(urgent);
+        urgent-foreground:           var(background);
+        active-background:           var(active);
+        active-foreground:           var(background);
+        selected-normal-background:  var(selected);
+        selected-normal-foreground:  var(background);
+        selected-urgent-background:  var(active);
+        selected-urgent-foreground:  var(background);
+        selected-active-background:  var(urgent);
+        selected-active-foreground:  var(background);
+        alternate-normal-background: var(background);
+        alternate-normal-foreground: var(foreground);
+        alternate-urgent-background: var(urgent);
+        alternate-urgent-foreground: var(background);
+        alternate-active-background: var(active);
+        alternate-active-foreground: var(background);
 
         /* Layout sizing — override per-resolution in config.rasi */
-        screen-margin:   150px 300px;
+        screen-margin:   150px 250px;
         box-spacing:     15px;
         list-padding:    8px;
         element-padding: 12px;
@@ -75,7 +80,7 @@ in {
         element-spacing: 12px;
     }
 
-    /* ---- Window (fullscreen overlay) ---- */
+    /*****----- Main Window -----*****/
     window {
         enabled:          true;
         fullscreen:       true;
@@ -86,22 +91,23 @@ in {
         border-radius:    0px;
         border-color:     var(border-colour);
         cursor:           "default";
-        background-color: var(background-colour);
+        background-color: rgba(0,0,0,0.5);
     }
 
-    /* ---- Main Box ---- */
+    /*****----- Main Box -----*****/
     mainbox {
         enabled:          true;
         spacing:          var(box-spacing);
         margin:           var(screen-margin);
-        padding:          0px;
-        border:           0px solid;
+        padding:          var(box-spacing);
+        border:           2px solid;
+        border-radius:    12px;
         border-color:     var(border-colour);
-        background-color: transparent;
+        background-color: var(background-colour);
         children:         [ "inputbar", "message", "listview" ];
     }
 
-    /* ---- Inputbar ---- */
+    /*****----- Inputbar -----*****/
     inputbar {
         enabled:          true;
         spacing:          0px;
@@ -111,57 +117,51 @@ in {
         border-color:     var(border-colour);
         background-color: transparent;
         text-color:       var(foreground-colour);
-        children:         [ "textbox-prompt-colon", "entry", "num-filtered-rows", "textbox-num-sep", "num-rows", "mode-switcher" ];
+        children:         [ "textbox-prompt-colon", "entry", "mode-switcher" ];
     }
 
     textbox-prompt-colon {
         enabled:          true;
         expand:           false;
         padding:          var(element-padding);
-        str:              " ";
-        font:             "FiraCode Nerd Font 13";
+        str:              "";
         border:           0px solid;
         border-radius:    var(element-radius);
         border-color:     var(border-colour);
         background-color: var(alternate-background);
         text-color:       var(foreground-colour);
     }
-
     entry {
         enabled:           true;
         expand:            true;
         padding:           var(element-padding);
-        background-color:  @alternate-background;
-        text-color:        @foreground-colour;
+        background-color:  inherit;
+        text-color:        inherit;
         cursor:            text;
         placeholder:       "Search...";
         placeholder-color: inherit;
     }
-
     num-filtered-rows {
         enabled:          true;
         expand:           false;
-        padding:          var(element-padding);
-        background-color: var(alternate-background);
-        text-color:       var(foreground-colour);
+        background-color: inherit;
+        text-color:       inherit;
     }
     textbox-num-sep {
         enabled:          true;
         expand:           false;
         str:              "/";
-        padding:          0px 12px 0px 0px;
-        background-color: var(alternate-background);
-        text-color:       var(foreground-colour);
+        background-color: inherit;
+        text-color:       inherit;
     }
     num-rows {
         enabled:          true;
         expand:           false;
-        padding:          0px 12px 0px 0px;
-        background-color: var(alternate-background);
-        text-color:       var(foreground-colour);
+        background-color: inherit;
+        text-color:       inherit;
     }
 
-    /* ---- Mode Switcher ---- */
+    /*****----- Mode Switcher -----*****/
     mode-switcher {
         enabled:          true;
         spacing:          var(box-spacing);
@@ -172,12 +172,12 @@ in {
     }
     button {
         padding:          var(element-padding);
-        width:            100px;
+        width:            130px;
         border:           0px solid;
         border-radius:    var(element-radius);
         border-color:     var(border-colour);
         background-color: var(alternate-background);
-        text-color:       var(foreground-colour);
+        text-color:       inherit;
         cursor:           pointer;
     }
     button selected {
@@ -185,7 +185,7 @@ in {
         text-color:       var(selected-normal-foreground);
     }
 
-    /* ---- Listview ---- */
+    /*****----- Listview -----*****/
     listview {
         enabled:          true;
         columns:          1;
@@ -204,7 +204,6 @@ in {
         text-color:       var(foreground-colour);
         cursor:           "default";
     }
-
     scrollbar {
         handle-width:     8px;
         handle-color:     var(handle-colour);
@@ -212,7 +211,7 @@ in {
         background-color: var(alternate-background);
     }
 
-    /* ---- Elements ---- */
+    /*****----- Elements -----*****/
     element {
         enabled:          true;
         spacing:          var(element-spacing);
@@ -224,17 +223,42 @@ in {
         text-color:       var(foreground-colour);
         cursor:           pointer;
     }
-
-    element normal.normal          { background-color: var(normal-background);           text-color: var(normal-foreground);           }
-    element normal.urgent          { background-color: var(urgent-background);           text-color: var(urgent-foreground);           }
-    element normal.active          { background-color: var(active-background);           text-color: var(active-foreground);           }
-    element selected.normal        { background-color: var(selected-normal-background);  text-color: var(selected-normal-foreground);  }
-    element selected.urgent        { background-color: var(selected-urgent-background);  text-color: var(selected-urgent-foreground);  }
-    element selected.active        { background-color: var(selected-active-background);  text-color: var(selected-active-foreground);  }
-    element alternate.normal       { background-color: var(alternate-normal-background); text-color: var(alternate-normal-foreground); }
-    element alternate.urgent       { background-color: var(alternate-urgent-background); text-color: var(alternate-urgent-foreground); }
-    element alternate.active       { background-color: var(alternate-active-background); text-color: var(alternate-active-foreground); }
-
+    element normal.normal {
+        background-color: var(normal-background);
+        text-color:       var(normal-foreground);
+    }
+    element normal.urgent {
+        background-color: var(urgent-background);
+        text-color:       var(urgent-foreground);
+    }
+    element normal.active {
+        background-color: var(active-background);
+        text-color:       var(active-foreground);
+    }
+    element selected.normal {
+        background-color: var(selected-normal-background);
+        text-color:       var(selected-normal-foreground);
+    }
+    element selected.urgent {
+        background-color: var(selected-urgent-background);
+        text-color:       var(selected-urgent-foreground);
+    }
+    element selected.active {
+        background-color: var(selected-active-background);
+        text-color:       var(selected-active-foreground);
+    }
+    element alternate.normal {
+        background-color: var(alternate-normal-background);
+        text-color:       var(alternate-normal-foreground);
+    }
+    element alternate.urgent {
+        background-color: var(alternate-urgent-background);
+        text-color:       var(alternate-urgent-foreground);
+    }
+    element alternate.active {
+        background-color: var(alternate-active-background);
+        text-color:       var(alternate-active-foreground);
+    }
     element-icon {
         background-color: transparent;
         text-color:       inherit;
@@ -250,7 +274,7 @@ in {
         horizontal-align: 0.0;
     }
 
-    /* ---- Message ---- */
+    /*****----- Message -----*****/
     message {
         enabled:          true;
         padding:          0px;
@@ -292,20 +316,20 @@ in {
   '';
 
   # matugen/colors-rofi.rasi is generated at runtime from the current wallpaper.
-  # Create a static fallback only if the file doesn't exist yet, so matugen can
-  # freely overwrite it. The fallback uses neutral dark tones matching the base palette.
+  # Recreate the fallback if missing OR if it has the old format (migration).
   home.activation.rofiMatugenFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
         colors_file="${homeDir}/.config/rofi/matugen/colors-rofi.rasi"
-        if [ ! -f "$colors_file" ]; then
+        if [ ! -f "$colors_file" ] || ! grep -q 'selected:' "$colors_file"; then
           mkdir -p "$(dirname "$colors_file")"
           cat > "$colors_file" << 'ROFI_COLORS'
     /* Catppuccin Mocha fallback (overwritten by matugen on wallpaper change) */
     * {
-        background:                 #1e1e2e;
-        foreground:                 #cdd6f4;
-        selected-active-background: #313244;
-        selected-urgent-background: #cba6f7;
-        selected-normal-background: #45475a;
+        background:     #1e1e2e;
+        background-alt: #313244;
+        foreground:     #cdd6f4;
+        selected:       #cba6f7;
+        active:         #45475a;
+        urgent:         #f38ba8;
     }
     ROFI_COLORS
         fi
