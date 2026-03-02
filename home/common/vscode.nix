@@ -1,10 +1,12 @@
 {
+  pkgs,
   config,
   vscodeExtensions,
   ...
 }: let
   mkt = vscodeExtensions.vscode-marketplace;
 in {
+  home.packages = [pkgs.alejandra];
   programs.vscode = {
     enable = true;
     mutableExtensionsDir = true;
@@ -178,6 +180,8 @@ in {
         "playwright.reuseBrowser" = false;
         "playwright.showTrace" = true;
 
+        "nix.formatterPath" = "alejandra";
+
         "docker.extension.enableComposeLanguageServer" = false;
 
         "json.schemaDownload.trustedDomains" = {
@@ -191,6 +195,10 @@ in {
           "https://docs.renovatebot.com" = true;
         };
 
+        "[nix]" = {
+          "editor.formatOnSave" = true;
+          "editor.defaultFormatter" = "jnoortheen.nix-ide";
+        };
         "[javascript]" = {
           "editor.maxTokenizationLineLength" = 2500;
           "editor.tabSize" = 2;
