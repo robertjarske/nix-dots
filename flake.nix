@@ -38,7 +38,6 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     nixpkgs-unstable,
     home-manager,

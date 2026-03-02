@@ -1,8 +1,4 @@
-{
-  pkgs,
-  unstable,
-  ...
-}: {
+{unstable, ...}: {
   environment.systemPackages = [
     unstable.neovim
     unstable.vscode

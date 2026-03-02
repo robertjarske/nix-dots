@@ -1,8 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}: {
+_: {
   xdg.configFile."nvim" = {
     source = ./nvim;
     recursive = true;
