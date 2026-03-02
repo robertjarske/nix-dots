@@ -23,6 +23,7 @@
   host.nvidia.intelBusId  = "PCI:0:2:0";
   host.nvidia.nvidiaBusId = "PCI:1:0:0";
 
+  hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.stable;
   # TODO: remove once NVIDIA 580+ supports Linux 6.19 natively (upstream fix pending).
   # Patch sourced from CachyOS — tracked at https://github.com/NixOS/nixpkgs/issues/489947
   # hardware.nvidia.package =

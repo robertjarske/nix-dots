@@ -9,11 +9,6 @@
     ../../modules/desktop/power.nix
     ../../modules/desktop/theme.nix
     ../../modules/desktop/apps.nix
-    # TEMPORARY: work modules loaded on bastion for testing/verification before
-    # forge is online. Remove once forge is the active work machine and rekeyed.
-    ../../modules/work/vpn.nix
-    ../../modules/work/certs.nix
-    ../../modules/work/dns.nix
   ];
 
   host.hibernation.resumeOffset = 533760;
