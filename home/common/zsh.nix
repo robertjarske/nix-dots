@@ -119,6 +119,12 @@
         ds = "nix develop"; # enter current project's dev shell
         nsh = "nix shell"; # quick: nix shell nixpkgs#foo
 
+        # --- Nix system management ---
+        nrs = "sudo nixos-rebuild switch --flake ~/code/nix-dots#$(hostname)";
+        ngen = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system";
+        ngc = "sudo nix-collect-garbage -d";
+        nss = "nix search nixpkgs";
+
         # --- Config quick-open ---
         zsh_config = "nvim ~/code/nix-dots/home/common/zsh.nix";
         kitty_config = "nvim ~/code/nix-dots/home/common/kitty.nix";
@@ -179,6 +185,23 @@
           echo "Restoring: $src"
           echo "       to: $dst"
           cp -ri "$src" "$dst"
+        }
+
+        # --- Nix package version checks ---
+        # nv neovim        → version in your pinned nixpkgs (25.11)
+        # nvu neovim       → version in nixpkgs-unstable
+        # nvc neovim       → compare both side by side
+        nv() {
+          nix eval --raw "github:NixOS/nixpkgs/nixos-25.11#''${1}.version" 2>/dev/null \
+            && echo || echo "''${1}: not found in nixos-25.11"
+        }
+        nvu() {
+          nix eval --raw "github:NixOS/nixpkgs/nixos-unstable#''${1}.version" 2>/dev/null \
+            && echo || echo "''${1}: not found in nixos-unstable"
+        }
+        nvc() {
+          echo "25.11:    $(nix eval --raw "github:NixOS/nixpkgs/nixos-25.11#''${1}.version" 2>/dev/null || echo 'not found')"
+          echo "unstable: $(nix eval --raw "github:NixOS/nixpkgs/nixos-unstable#''${1}.version" 2>/dev/null || echo 'not found')"
         }
 
         # --- System info on shell start ---
