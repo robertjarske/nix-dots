@@ -1,5 +1,8 @@
-{ config, pkgs, ... }:
 {
+  config,
+  pkgs,
+  ...
+}: {
   networking.networkmanager.dns = "dnsmasq";
 
   environment.etc."NetworkManager/dnsmasq.d/00-config".text = ''
@@ -8,11 +11,11 @@
   '';
 
   age.secrets.work-dns-domains.file = ../../secrets/work-dns-domains.age;
-  age.secrets.dns-development.file  = ../../secrets/dns-development.age;
-  age.secrets.dns-production.file   = ../../secrets/dns-production.age;
+  age.secrets.dns-development.file = ../../secrets/dns-development.age;
+  age.secrets.dns-production.file = ../../secrets/dns-production.age;
 
   system.activationScripts.nm-dns-setup = {
-    deps = [ "agenix" ];
+    deps = ["agenix"];
     text = ''
       mkdir -p /etc/NetworkManager/dnsmasq.d
       install -m 0644 -o root -g root ${config.age.secrets.work-dns-domains.path} \

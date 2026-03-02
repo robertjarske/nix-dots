@@ -1,5 +1,8 @@
-{ config, lib, ... }:
 {
+  config,
+  lib,
+  ...
+}: {
   options.host.disk = lib.mkOption {
     type = lib.types.str;
     description = "Primary disk device path (e.g. /dev/nvme0n1)";
@@ -19,7 +22,7 @@
               type = "filesystem";
               format = "vfat";
               mountpoint = "/boot";
-              mountOptions = [ "umask=0077" "flush" ];
+              mountOptions = ["umask=0077" "flush"];
             };
           };
           luks = {
@@ -33,23 +36,23 @@
               passwordFile = "/tmp/luks-password";
               content = {
                 type = "btrfs";
-                extraArgs = [ "-f" ];
+                extraArgs = ["-f"];
                 subvolumes = {
                   "@" = {
                     mountpoint = "/";
-                    mountOptions = [ "noatime" "compress=zstd:1" "ssd" "discard=async" ];
+                    mountOptions = ["noatime" "compress=zstd:1" "ssd" "discard=async"];
                   };
                   "@home" = {
                     mountpoint = "/home";
-                    mountOptions = [ "noatime" "compress=zstd:1" "ssd" "discard=async" ];
+                    mountOptions = ["noatime" "compress=zstd:1" "ssd" "discard=async"];
                   };
                   "@nix" = {
                     mountpoint = "/nix";
-                    mountOptions = [ "noatime" "compress=zstd:1" "ssd" "discard=async" ];
+                    mountOptions = ["noatime" "compress=zstd:1" "ssd" "discard=async"];
                   };
                   "@log" = {
                     mountpoint = "/var/log";
-                    mountOptions = [ "noatime" "compress=zstd:1" "ssd" "discard=async" ];
+                    mountOptions = ["noatime" "compress=zstd:1" "ssd" "discard=async"];
                   };
                   "@swap" = {
                     mountpoint = "/swap";

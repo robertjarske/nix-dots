@@ -1,8 +1,11 @@
-{ pkgs, config, vscodeExtensions, ... }:
-let
-  mkt = vscodeExtensions.vscode-marketplace;
-in
 {
+  pkgs,
+  config,
+  vscodeExtensions,
+  ...
+}: let
+  mkt = vscodeExtensions.vscode-marketplace;
+in {
   programs.vscode = {
     enable = true;
     mutableExtensionsDir = true;
@@ -81,170 +84,174 @@ in
 
     profiles.default.keybindings = [
       {
-        key     = "ctrl+shift+down";
+        key = "ctrl+shift+down";
         command = "editor.action.copyLinesDownAction";
-        when    = "editorTextFocus && !editorReadonly";
+        when = "editorTextFocus && !editorReadonly";
       }
       {
-        key     = "ctrl+shift+alt+down";
+        key = "ctrl+shift+alt+down";
         command = "-editor.action.copyLinesDownAction";
-        when    = "editorTextFocus && !editorReadonly";
+        when = "editorTextFocus && !editorReadonly";
       }
       {
-        key     = "ctrl+shift+up";
+        key = "ctrl+shift+up";
         command = "editor.action.copyLinesUpAction";
-        when    = "editorTextFocus && !editorReadonly";
+        when = "editorTextFocus && !editorReadonly";
       }
       {
-        key     = "ctrl+shift+alt+up";
+        key = "ctrl+shift+alt+up";
         command = "-editor.action.copyLinesUpAction";
-        when    = "editorTextFocus && !editorReadonly";
+        when = "editorTextFocus && !editorReadonly";
       }
       {
-        key     = "ctrl+shift+enter";
+        key = "ctrl+shift+enter";
         command = "editor.emmet.action.wrapWithAbbreviation";
       }
       {
-        key     = "ctrl+f";
+        key = "ctrl+f";
         command = "-list.find";
-        when    = "listFocus && listSupportsFind";
+        when = "listFocus && listSupportsFind";
       }
       {
-        key     = "ctrl+shift+7";
+        key = "ctrl+shift+7";
         command = "editor.action.commentLine";
-        when    = "editorTextFocus && !editorReadonly";
+        when = "editorTextFocus && !editorReadonly";
       }
       {
-        key     = "ctrl+/";
+        key = "ctrl+/";
         command = "-editor.action.commentLine";
-        when    = "editorTextFocus && !editorReadonly";
+        when = "editorTextFocus && !editorReadonly";
       }
     ];
 
     profiles.default.userSettings = {
-      "workbench.colorTheme"                      = "Catppuccin Macchiato";
-      "workbench.iconTheme"                       = "material-icon-theme";
+      "workbench.colorTheme" = "Catppuccin Macchiato";
+      "workbench.iconTheme" = "material-icon-theme";
       "workbench.secondarySideBar.defaultVisibility" = "hidden";
 
-      "security.workspace.trust.untrustedFiles"   = "open";
-      "open-in-browser.default"                   = "chrome";
+      "security.workspace.trust.untrustedFiles" = "open";
+      "open-in-browser.default" = "chrome";
 
-      "editor.fontFamily"                         = "'Fira Code'";
-      "editor.fontLigatures"                      = true;
-      "editor.tabCompletion"                      = "on";
-      "editor.stickyScroll.enabled"               = true;
-      "editor.cursorStyle"                        = "line-thin";
-      "editor.inlineSuggest.suppressSuggestions"  = true;
-      "editor.quickSuggestions"                   = { "strings" = "on"; };
+      "editor.fontFamily" = "'Fira Code'";
+      "editor.fontLigatures" = true;
+      "editor.tabCompletion" = "on";
+      "editor.stickyScroll.enabled" = true;
+      "editor.cursorStyle" = "line-thin";
+      "editor.inlineSuggest.suppressSuggestions" = true;
+      "editor.quickSuggestions" = {"strings" = "on";};
 
-      "files.autoSave"                            = "onWindowChange";
-      "files.trimTrailingWhitespace"              = true;
+      "files.autoSave" = "onWindowChange";
+      "files.trimTrailingWhitespace" = true;
 
-      "doctypes.descriptionWrap"                  = 115;
+      "doctypes.descriptionWrap" = 115;
 
       # phpSniffer uses composer-installed binaries in the user's local dir
       "phpSniffer.executablesFolder" = "${config.home.homeDirectory}/.config/composer/vendor/bin";
 
-      "css.validate"                              = false;
-      "less.validate"                             = false;
-      "scss.validate"                             = false;
-      "stylelint.snippet"                         = [ "css" "less" "postcss" "scss" ];
-      "stylelint.validate"                        = [ "css" "less" "postcss" "scss" ];
+      "css.validate" = false;
+      "less.validate" = false;
+      "scss.validate" = false;
+      "stylelint.snippet" = ["css" "less" "postcss" "scss"];
+      "stylelint.validate" = ["css" "less" "postcss" "scss"];
 
       # Maps a language ID to another so Emmet uses that mode.
       # html/js/ts have built-in Emmet; only non-standard languages need entries here.
       "emmet.includeLanguages" = {
-        "javascriptreact"  = "html";  # Emmet HTML mode inside JSX
-        "typescriptreact"  = "html";  # Emmet HTML mode inside TSX
-        "twig"             = "html";  # Twig templates use HTML Emmet
+        "javascriptreact" = "html"; # Emmet HTML mode inside JSX
+        "typescriptreact" = "html"; # Emmet HTML mode inside TSX
+        "twig" = "html"; # Twig templates use HTML Emmet
       };
 
-      "makefile.configureOnOpen"                  = false;
-      "redhat.telemetry.enabled"                  = false;
-      "gitlens.codeLens.enabled"                  = false;
-      "gitlens.ai.model"                          = "vscode";
-      "gitlens.ai.vscode.model"                   = "copilot:gpt-4.1";
+      "makefile.configureOnOpen" = false;
+      "redhat.telemetry.enabled" = false;
+      "gitlens.codeLens.enabled" = false;
+      "gitlens.ai.model" = "vscode";
+      "gitlens.ai.vscode.model" = "copilot:gpt-4.1";
 
-      "material-icon-theme.files.associations"    = { "*.neon" = "phpstan"; };
+      "material-icon-theme.files.associations" = {"*.neon" = "phpstan";};
 
-      "nightwatch.quickSettings.parallels"        = 22;
-      "nightwatch.quickSettings.environments"     = "chrome";
-      "nightwatch.quickSettings.headlessMode"     = false;
-      "nightwatch.quickSettings.openReport"       = false;
+      "nightwatch.quickSettings.parallels" = 22;
+      "nightwatch.quickSettings.environments" = "chrome";
+      "nightwatch.quickSettings.headlessMode" = false;
+      "nightwatch.quickSettings.openReport" = false;
 
-      "playwright.reuseBrowser"                   = false;
-      "playwright.showTrace"                      = true;
+      "playwright.reuseBrowser" = false;
+      "playwright.showTrace" = true;
 
       "docker.extension.enableComposeLanguageServer" = false;
 
       "json.schemaDownload.trustedDomains" = {
         "https://schemastore.azurewebsites.net/" = true;
-        "https://raw.githubusercontent.com/"     = true;
-        "https://www.schemastore.org/"           = true;
-        "https://json.schemastore.org/"          = true;
-        "https://json-schema.org/"               = true;
-        "https://ui.shadcn.com/schema.json"      = true;
-        "https://turbo.build"                    = true;
-        "https://docs.renovatebot.com"           = true;
+        "https://raw.githubusercontent.com/" = true;
+        "https://www.schemastore.org/" = true;
+        "https://json.schemastore.org/" = true;
+        "https://json-schema.org/" = true;
+        "https://ui.shadcn.com/schema.json" = true;
+        "https://turbo.build" = true;
+        "https://docs.renovatebot.com" = true;
       };
 
       "[javascript]" = {
         "editor.maxTokenizationLineLength" = 2500;
-        "editor.tabSize"                   = 2;
-        "editor.formatOnSave"              = true;
-        "editor.defaultFormatter"          = "esbenp.prettier-vscode";
+        "editor.tabSize" = 2;
+        "editor.formatOnSave" = true;
+        "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
       "[typescript]" = {
         "editor.maxTokenizationLineLength" = 2500;
-        "editor.tabSize"                   = 2;
-        "editor.formatOnSave"              = true;
-        "editor.defaultFormatter"          = "esbenp.prettier-vscode";
+        "editor.tabSize" = 2;
+        "editor.formatOnSave" = true;
+        "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
       "[javascriptreact]" = {
-        "editor.tabSize"          = 2;
-        "editor.formatOnSave"     = true;
+        "editor.tabSize" = 2;
+        "editor.formatOnSave" = true;
         "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
       "[typescriptreact]" = {
-        "editor.tabSize"          = 2;
-        "editor.formatOnSave"     = true;
+        "editor.tabSize" = 2;
+        "editor.formatOnSave" = true;
         "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
       "[json]" = {
-        "editor.formatOnSave"              = true;
-        "editor.quickSuggestions"          = { "strings" = true; };
-        "editor.suggest.insertMode"        = "replace";
-        "editor.defaultFormatter"          = "esbenp.prettier-vscode";
+        "editor.formatOnSave" = true;
+        "editor.quickSuggestions" = {"strings" = true;};
+        "editor.suggest.insertMode" = "replace";
+        "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
       "[jsonc]" = {
-        "editor.formatOnSave"              = true;
-        "editor.quickSuggestions"          = { "strings" = true; };
-        "editor.suggest.insertMode"        = "replace";
-        "editor.defaultFormatter"          = "esbenp.prettier-vscode";
+        "editor.formatOnSave" = true;
+        "editor.quickSuggestions" = {"strings" = true;};
+        "editor.suggest.insertMode" = "replace";
+        "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
       "[php]" = {
         "editor.linkedEditing" = true;
-        "editor.tabSize"       = 4;
+        "editor.tabSize" = 4;
       };
       "[css]" = {
-        "editor.formatOnSave"      = true;
-        "editor.tabSize"           = 2;
-        "editor.defaultFormatter"  = "stylelint.vscode-stylelint";
-        "editor.codeActionsOnSave" = { "source.fixAll.stylelint" = "explicit"; };
+        "editor.formatOnSave" = true;
+        "editor.tabSize" = 2;
+        "editor.defaultFormatter" = "stylelint.vscode-stylelint";
+        "editor.codeActionsOnSave" = {"source.fixAll.stylelint" = "explicit";};
       };
       "[scss]" = {
-        "editor.formatOnSave"      = true;
-        "editor.tabSize"           = 2;
-        "editor.codeActionsOnSave" = { "source.fixAll.stylelint" = "explicit"; };
+        "editor.formatOnSave" = true;
+        "editor.tabSize" = 2;
+        "editor.codeActionsOnSave" = {"source.fixAll.stylelint" = "explicit";};
       };
-      "[yaml]"                    = { "editor.defaultFormatter" = "redhat.vscode-yaml"; };
-      "[github-actions-workflow]" = { "editor.defaultFormatter" = "redhat.vscode-yaml"; };
+      "[yaml]" = {"editor.defaultFormatter" = "redhat.vscode-yaml";};
+      "[github-actions-workflow]" = {"editor.defaultFormatter" = "redhat.vscode-yaml";};
       "[dockercompose]" = {
-        "editor.insertSpaces"      = true;
-        "editor.tabSize"           = 2;
-        "editor.autoIndent"        = "advanced";
-        "editor.quickSuggestions"  = { "other" = true; "comments" = false; "strings" = true; };
-        "editor.defaultFormatter"  = "redhat.vscode-yaml";
+        "editor.insertSpaces" = true;
+        "editor.tabSize" = 2;
+        "editor.autoIndent" = "advanced";
+        "editor.quickSuggestions" = {
+          "other" = true;
+          "comments" = false;
+          "strings" = true;
+        };
+        "editor.defaultFormatter" = "redhat.vscode-yaml";
       };
     };
   };

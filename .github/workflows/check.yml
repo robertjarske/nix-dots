@@ -5,11 +5,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.base_ref }}
+          path: .base
       - uses: DeterminateSystems/nix-installer-action@v14
       - uses: DeterminateSystems/magic-nix-cache-action@v8
+      - name: Lint (statix)
+        run: nix run nixpkgs#statix -- check .
+      - name: Lint (deadnix)
+        run: nix run nixpkgs#deadnix -- --fail .
+      - name: Format check (alejandra)
+        run: nix fmt -- --check .
       - name: Validate flake schema
         run: nix flake check
       - name: Build bastion configuration
-        run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --no-link
+        run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --out-link result-bastion
       - name: Build forge configuration
-        run: nix build .#nixosConfigurations.forge.config.system.build.toplevel --no-link
+        run: nix build .#nixosConfigurations.forge.config.system.build.toplevel --out-link result-forge
+      - name: Build base bastion configuration
+        if: github.event_name == 'pull_request'
+        run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --out-link ${{ github.workspace }}/result-base-bastion
+        working-directory: .base
+      - name: Build base forge configuration
+        if: github.event_name == 'pull_request'
+        run: nix build .#nixosConfigurations.forge.config.system.build.toplevel --out-link ${{ github.workspace }}/result-base-forge
+        working-directory: .base
+      - name: Diff bastion
+        if: github.event_name == 'pull_request'
+        run: nix run nixpkgs#nvd -- diff result-base-bastion result-bastion
+      - name: Diff forge
+        if: github.event_name == 'pull_request'
+        run: nix run nixpkgs#nvd -- diff result-base-forge result-forge

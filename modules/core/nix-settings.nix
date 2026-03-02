@@ -1,8 +1,7 @@
-{ ... }:
-{
+{...}: {
   nix = {
     settings = {
-      experimental-features = [ "nix-command" "flakes" ];
+      experimental-features = ["nix-command" "flakes"];
 
       substituters = [
         "https://cache.nixos.org"
@@ -29,7 +28,7 @@
     # auto-optimise-store adds overhead to each individual build operation.
     optimise = {
       automatic = true;
-      dates = [ "weekly" ];
+      dates = ["weekly"];
     };
   };
 

@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   fonts = {
     enableDefaultPackages = true;
     packages = with pkgs; [
@@ -16,14 +15,14 @@
 
     fontconfig = {
       defaultFonts = {
-        serif     = [ "Noto Serif" ];
-        sansSerif = [ "Noto Sans" ];
-        monospace = [ "JetBrainsMono Nerd Font" ];
-        emoji     = [ "Noto Color Emoji" ];
+        serif = ["Noto Serif"];
+        sansSerif = ["Noto Sans"];
+        monospace = ["JetBrainsMono Nerd Font"];
+        emoji = ["Noto Color Emoji"];
       };
       hinting = {
         enable = true;
-        style  = "slight";
+        style = "slight";
       };
       subpixel.rgba = "rgb";
     };

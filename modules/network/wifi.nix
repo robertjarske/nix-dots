@@ -1,12 +1,15 @@
-{ config, pkgs, ... }:
 {
-  age.secrets.wifi-blackbox.file      = ../../secrets/wifi-blackbox.age;
-  age.secrets.wifi-blackbox-5g.file   = ../../secrets/wifi-blackbox-5g.age;
+  config,
+  pkgs,
+  ...
+}: {
+  age.secrets.wifi-blackbox.file = ../../secrets/wifi-blackbox.age;
+  age.secrets.wifi-blackbox-5g.file = ../../secrets/wifi-blackbox-5g.age;
   age.secrets.wifi-blackbox-5g-2.file = ../../secrets/wifi-blackbox-5g-2.age;
-  age.secrets.wifi-blackbox-6g.file   = ../../secrets/wifi-blackbox-6g.age;
+  age.secrets.wifi-blackbox-6g.file = ../../secrets/wifi-blackbox-6g.age;
 
   system.activationScripts.nm-wifi-setup = {
-    deps = [ "agenix" ];
+    deps = ["agenix"];
     text = ''
       mkdir -p /etc/NetworkManager/system-connections
       install -m 0600 -o root -g root ${config.age.secrets.wifi-blackbox.path}      /etc/NetworkManager/system-connections/blackbox.nmconnection

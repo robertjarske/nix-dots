@@ -1,5 +1,8 @@
-{ config, lib, ... }:
 {
+  config,
+  lib,
+  ...
+}: {
   options.host.nvidia = {
     intelBusId = lib.mkOption {
       type = lib.types.str;
@@ -36,14 +39,14 @@
       };
     };
 
-    services.xserver.videoDrivers = [ "nvidia" ];
+    services.xserver.videoDrivers = ["nvidia"];
 
     environment.sessionVariables = {
       # Hardware cursor rendering is broken on NVIDIA under Wayland.
       WLR_NO_HARDWARE_CURSORS = "1";
       # Suppress GSYNC/VRR warnings and GLX vendor selection
       __GL_GSYNC_ALLOWED = "0";
-      __GL_VRR_ALLOWED   = "0";
+      __GL_VRR_ALLOWED = "0";
       # Xwayland: disable glamor to avoid flickering on NVIDIA
       XWAYLAND_NO_GLAMOR = "1";
     };

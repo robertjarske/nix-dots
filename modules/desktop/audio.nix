@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   security.rtkit.enable = true;
 
   services.pipewire = {
@@ -11,7 +10,7 @@
   };
 
   environment.systemPackages = with pkgs; [
-    pavucontrol    # GUI volume control
-    pwvucontrol    # Pipewire native volume control
+    pavucontrol # GUI volume control
+    pwvucontrol # Pipewire native volume control
   ];
 }

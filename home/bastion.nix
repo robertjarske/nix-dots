@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   imports = [
     ./common/zsh.nix
     ./common/kitty.nix

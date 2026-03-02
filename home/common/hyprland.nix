@@ -1,19 +1,24 @@
-{ config, pkgs, lib, ... }:
-let
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: let
   # Solid Catppuccin Mocha base (#1e1e2e) fallback used by hyprpaper at service
   # startup. Always available in the Nix store — no network or clone required.
   # wallpaper-change replaces it with a real wallpaper 2 seconds after login.
-  fallbackWallpaper = pkgs.runCommand "fallback-wallpaper.png" {
-    nativeBuildInputs = [ pkgs.imagemagick ];
-  } ''
-    convert -size 1920x1080 xc:'#1e1e2e' "$out"
-  '';
+  fallbackWallpaper =
+    pkgs.runCommand "fallback-wallpaper.png" {
+      nativeBuildInputs = [pkgs.imagemagick];
+    } ''
+      convert -size 1920x1080 xc:'#1e1e2e' "$out"
+    '';
 
   # Changes the wallpaper via hyprpaper IPC and regenerates Material You colors.
   # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [ pkgs.matugen pkgs.jq pkgs.util-linux ];
+    runtimeInputs = [pkgs.matugen pkgs.jq pkgs.util-linux];
     text = ''
       # Prevent concurrent runs — rapid invocations would preload multiple
       # wallpapers without unloading them, eventually crashing hyprpaper.
@@ -40,24 +45,23 @@ let
       pkill -USR1 kitty || true
     '';
   };
-in
-{
-  home.packages = [ wallpaper-change ];
+in {
+  home.packages = [wallpaper-change];
   # Catppuccin Mocha fallback so `source` doesn't error on first boot before
   # matugen has run. Only the variables actually used in the config are needed.
-  home.activation.hyprlandColorsFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    colors_file="${config.home.homeDirectory}/.config/hypr/matugen/matugen-hyprland.conf"
-    if [ ! -f "$colors_file" ]; then
-      mkdir -p "$(dirname "$colors_file")"
-      cat > "$colors_file" << 'EOF'
-$primary = rgba(cba6f7ff)
-$tertiary = rgba(94e2d5ff)
-$outline_variant = rgba(313244ff)
-EOF
-    fi
+  home.activation.hyprlandColorsFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        colors_file="${config.home.homeDirectory}/.config/hypr/matugen/matugen-hyprland.conf"
+        if [ ! -f "$colors_file" ]; then
+          mkdir -p "$(dirname "$colors_file")"
+          cat > "$colors_file" << 'EOF'
+    $primary = rgba(cba6f7ff)
+    $tertiary = rgba(94e2d5ff)
+    $outline_variant = rgba(313244ff)
+    EOF
+        fi
   '';
 
-  home.activation.syncWallpapers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.syncWallpapers = lib.hm.dag.entryAfter ["writeBoundary"] ''
     wallpapers_dir="${config.home.homeDirectory}/Pictures/wallpapers"
     mkdir -p "$(dirname "$wallpapers_dir")"
     if [ -d "$wallpapers_dir" ]; then
@@ -79,8 +83,8 @@ EOF
     settings = {
       splash = false;
       ipc = true;
-      preload = [ "${fallbackWallpaper}" ];
-      wallpaper = [ ",${fallbackWallpaper}" ];
+      preload = ["${fallbackWallpaper}"];
+      wallpaper = [",${fallbackWallpaper}"];
     };
   };
 
@@ -126,7 +130,7 @@ EOF
     settings = {
       # Catch-all: any monitor not matched by a host-specific rule gets its
       # preferred resolution, auto-placed, at scale 1.
-      monitor = [ ",preferred,auto,1" ];
+      monitor = [",preferred,auto,1"];
 
       general = {
         gaps_in = 5;
@@ -202,7 +206,7 @@ EOF
         "HYPRCURSOR_SIZE,24"
       ];
 
-      "source" = [ "~/.config/hypr/matugen/matugen-hyprland.conf" ];
+      "source" = ["~/.config/hypr/matugen/matugen-hyprland.conf"];
 
       "$mod" = "SUPER";
 

@@ -1,5 +1,8 @@
-{ pkgs, lib, ... }:
-let
+{
+  pkgs,
+  lib,
+  ...
+}: let
   certutil = "${pkgs.nss.tools}/bin/certutil";
   importCerts = db: ''
     ${certutil} -d "${db}" -A -n "Work Root CA" -t "CT,," \
@@ -7,12 +10,11 @@ let
     ${certutil} -d "${db}" -A -n "Work Dev CA" -t "CT,," \
       -i "$cert_dir/work-dev-ca.pem" 2>/dev/null || true
   '';
-in
-{
+in {
   # Import work CA certificates into browser NSS databases.
   # programs.firefox's Certificates.Install policy silently fails on NixOS —
   # certutil is the reliable alternative. Chrome and Vivaldi share ~/.pki/nssdb.
-  home.activation.importWorkCerts = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.importWorkCerts = lib.hm.dag.entryAfter ["writeBoundary"] ''
     cert_dir="/etc/work-certs"
     if [ -d "$cert_dir" ] && [ -f "$cert_dir/work-root-ca.pem" ]; then
 

@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   # Required for dconf/GSettings to work in user sessions — without this,
   # dark mode preference and GTK settings written by home-manager don't persist.
   programs.dconf.enable = true;
@@ -12,29 +11,29 @@
   # XDG portal for screen sharing, file pickers etc.
   xdg.portal = {
     enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-hyprland ];
+    extraPortals = [pkgs.xdg-desktop-portal-hyprland];
     config.common.default = "*";
   };
 
   environment.sessionVariables = {
-    NIXOS_OZONE_WL = "1";        # Electron apps use Wayland
+    NIXOS_OZONE_WL = "1"; # Electron apps use Wayland
     XDG_CURRENT_DESKTOP = "Hyprland";
     XDG_SESSION_TYPE = "wayland";
     XDG_SESSION_DESKTOP = "Hyprland";
   };
 
   environment.systemPackages = with pkgs; [
-    hyprpaper              # Wallpaper daemon
-    hyprlock               # Lock screen
-    hypridle               # Idle management
-    hyprpolkitagent        # Polkit authentication agent
-    hyprshot               # Screenshots
-    wl-clipboard           # Wayland clipboard (wl-copy/wl-paste)
-    cliphist               # Clipboard history
-    brightnessctl          # Brightness control
-    playerctl              # Media key control
-    networkmanagerapplet   # NM system tray (VPN toggle, connection editing)
-    wofi                   # Launcher (fallback)
+    hyprpaper # Wallpaper daemon
+    hyprlock # Lock screen
+    hypridle # Idle management
+    hyprpolkitagent # Polkit authentication agent
+    hyprshot # Screenshots
+    wl-clipboard # Wayland clipboard (wl-copy/wl-paste)
+    cliphist # Clipboard history
+    brightnessctl # Brightness control
+    playerctl # Media key control
+    networkmanagerapplet # NM system tray (VPN toggle, connection editing)
+    wofi # Launcher (fallback)
     swaynotificationcenter # Notification daemon with panel
   ];
 }

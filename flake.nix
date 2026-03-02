@@ -37,8 +37,18 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, disko, agenix, hyprpanel, nix-vscode-extensions, lanzaboote, ... }:
-  let
+  outputs = {
+    self,
+    nixpkgs,
+    nixpkgs-unstable,
+    home-manager,
+    disko,
+    agenix,
+    hyprpanel,
+    nix-vscode-extensions,
+    lanzaboote,
+    ...
+  }: let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
     unstable = import nixpkgs-unstable {
@@ -47,16 +57,23 @@
     };
 
     # Apply overlay + allowUnfree on the same pkgs instance (required for unfree extensions).
-    vscodeExtensions = (import nixpkgs {
-      inherit system;
-      config.allowUnfree = true;
-      overlays = [ nix-vscode-extensions.overlays.default ];
-    }).nix-vscode-extensions;
+    vscodeExtensions =
+      (import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        overlays = [nix-vscode-extensions.overlays.default];
+      }).nix-vscode-extensions;
 
-    mkHost = { hostModule, homeModule, username, disk, hostname }:
+    mkHost = {
+      hostModule,
+      homeModule,
+      username,
+      disk,
+      hostname,
+    }:
       nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit agenix unstable; };
+        specialArgs = {inherit agenix unstable;};
         modules = [
           disko.nixosModules.disko
           home-manager.nixosModules.home-manager
@@ -89,18 +106,31 @@
 
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = { inherit hyprpanel vscodeExtensions; };
+            home-manager.extraSpecialArgs = {inherit hyprpanel vscodeExtensions;};
             home-manager.users.${username} = homeModule;
           }
         ];
       };
-  in
-  {
+  in {
+    formatter.${system} = pkgs.alejandra;
+
     templates = {
-      node    = { path = ./templates/node;    description = "Node.js / TypeScript"; };
-      php     = { path = ./templates/php;     description = "PHP + Composer";       };
-      python  = { path = ./templates/python;  description = "Python 3";             };
-      default = { path = ./templates/default; description = "Generic devShell";     };
+      node = {
+        path = ./templates/node;
+        description = "Node.js / TypeScript";
+      };
+      php = {
+        path = ./templates/php;
+        description = "PHP + Composer";
+      };
+      python = {
+        path = ./templates/python;
+        description = "Python 3";
+      };
+      default = {
+        path = ./templates/default;
+        description = "Generic devShell";
+      };
     };
 
     apps.${system} = {

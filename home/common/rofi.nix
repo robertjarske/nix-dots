@@ -1,9 +1,12 @@
-{ pkgs, lib, config, ... }:
-let
-  homeDir = config.home.homeDirectory;
-in
 {
-  home.packages = [ pkgs.rofi ];
+  pkgs,
+  lib,
+  config,
+  ...
+}: let
+  homeDir = config.home.homeDirectory;
+in {
+  home.packages = [pkgs.rofi];
 
   xdg.configFile."rofi/master-config.rasi".text = ''
     /* Master Config 1440p */
@@ -272,20 +275,20 @@ in
   # matugen/colors-rofi.rasi is generated at runtime from the current wallpaper.
   # Create a static fallback only if the file doesn't exist yet, so matugen can
   # freely overwrite it. The fallback uses neutral dark tones matching the base palette.
-  home.activation.rofiMatugenFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    colors_file="${homeDir}/.config/rofi/matugen/colors-rofi.rasi"
-    if [ ! -f "$colors_file" ]; then
-      mkdir -p "$(dirname "$colors_file")"
-      cat > "$colors_file" << 'ROFI_COLORS'
-/* Catppuccin Mocha fallback (overwritten by matugen on wallpaper change) */
-* {
-    background:                 #1e1e2e;
-    foreground:                 #cdd6f4;
-    selected-active-background: #313244;
-    selected-urgent-background: #cba6f7;
-    selected-normal-background: #45475a;
-}
-ROFI_COLORS
-    fi
+  home.activation.rofiMatugenFallback = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        colors_file="${homeDir}/.config/rofi/matugen/colors-rofi.rasi"
+        if [ ! -f "$colors_file" ]; then
+          mkdir -p "$(dirname "$colors_file")"
+          cat > "$colors_file" << 'ROFI_COLORS'
+    /* Catppuccin Mocha fallback (overwritten by matugen on wallpaper change) */
+    * {
+        background:                 #1e1e2e;
+        foreground:                 #cdd6f4;
+        selected-active-background: #313244;
+        selected-urgent-background: #cba6f7;
+        selected-normal-background: #45475a;
+    }
+    ROFI_COLORS
+        fi
   '';
 }

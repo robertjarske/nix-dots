@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+{pkgs, ...}: {
   imports = [
     ./hardware-configuration.nix
     ../../modules/desktop/hyprland.nix
@@ -28,8 +27,8 @@
 
   programs._1password.enable = true;
   programs._1password-gui = {
-      enable = true;
-      polkitPolicyOwners = [ "gast" ];
+    enable = true;
+    polkitPolicyOwners = ["gast"];
   };
 
   services.openssh = {

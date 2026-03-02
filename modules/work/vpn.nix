@@ -1,14 +1,16 @@
-{ config, pkgs, ... }:
-let
+{
+  config,
+  pkgs,
+  ...
+}: let
   strongswanNM-bypass = pkgs.strongswanNM.overrideAttrs (old: {
-    configureFlags = (old.configureFlags or []) ++ [ "--enable-bypass-lan" ];
+    configureFlags = (old.configureFlags or []) ++ ["--enable-bypass-lan"];
   });
   nm-strongswan = pkgs.networkmanager-strongswan.override {
     strongswanNM = strongswanNM-bypass;
   };
-in
-{
-  networking.networkmanager.plugins = [ nm-strongswan ];
+in {
+  networking.networkmanager.plugins = [nm-strongswan];
   age.secrets.work-vpn.file = ../../secrets/work-vpn.age;
 
   environment.etc."strongswan.conf".text = ''
@@ -28,7 +30,7 @@ in
   '';
 
   system.activationScripts.nm-vpn-setup = {
-    deps = [ "agenix" ];
+    deps = ["agenix"];
     text = ''
       # Fail loudly if the secret is missing the certificate= field.
       # Without it, charon-nm skips server cert verification entirely (MITM risk).

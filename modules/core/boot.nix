@@ -1,5 +1,9 @@
-{ pkgs, lib, config, ... }:
 {
+  pkgs,
+  lib,
+  config,
+  ...
+}: {
   options.host = {
     hibernation.resumeOffset = lib.mkOption {
       type = lib.types.nullOr lib.types.int;
@@ -13,7 +17,7 @@
     };
 
     secureboot.enable = lib.mkOption {
-      type    = lib.types.bool;
+      type = lib.types.bool;
       default = false;
     };
   };
@@ -53,33 +57,35 @@
     (lib.mkIf config.host.secureboot.enable {
       boot.loader.systemd-boot.enable = lib.mkForce false;
       boot.lanzaboote = {
-        enable    = true;
+        enable = true;
         pkiBundle = "/var/lib/sbctl";
       };
-      environment.systemPackages = [ pkgs.sbctl ];
+      environment.systemPackages = [pkgs.sbctl];
     })
 
     (lib.mkIf (config.host.hibernation.resumeOffset != null) {
-      boot.kernelParams = [ "resume_offset=${toString config.host.hibernation.resumeOffset}" ];
+      boot.kernelParams = ["resume_offset=${toString config.host.hibernation.resumeOffset}"];
     })
 
     (lib.mkIf (config.host.hibernation.resumeOffset == null) {
-      warnings = [ ''
+      warnings = [
+        ''
 
-        ══════════════════════════════════════════════════════════════
-         HIBERNATION NOT CONFIGURED: host.hibernation.resumeOffset
-        ══════════════════════════════════════════════════════════════
-         Suspend-to-disk will silently fail or corrupt until set.
+          ══════════════════════════════════════════════════════════════
+           HIBERNATION NOT CONFIGURED: host.hibernation.resumeOffset
+          ══════════════════════════════════════════════════════════════
+           Suspend-to-disk will silently fail or corrupt until set.
 
-         After first boot, run:
-           sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
+           After first boot, run:
+             sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
 
-         Then in your host config (hosts/<name>/default.nix):
-           host.hibernation.resumeOffset = <the number>;
+           Then in your host config (hosts/<name>/default.nix):
+             host.hibernation.resumeOffset = <the number>;
 
-         Then rebuild: sudo nixos-rebuild switch --flake .#<hostname>
-        ══════════════════════════════════════════════════════════════
-      ''];
+           Then rebuild: sudo nixos-rebuild switch --flake .#<hostname>
+          ══════════════════════════════════════════════════════════════
+        ''
+      ];
     })
   ];
 }

@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   imports = [
     ./common/zsh.nix
     ./common/kitty.nix
@@ -29,7 +28,7 @@
   #   mkdir -p ~/.config/git
   #   printf '[user]\n  email = your.work@email.com\n' > ~/.config/git/local-identity
   programs.git.includes = [
-    { path = "~/.config/git/local-identity"; }
+    {path = "~/.config/git/local-identity";}
   ];
 
   wayland.windowManager.hyprland.settings.monitor = [

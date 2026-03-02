@@ -1,6 +1,5 @@
-{ pkgs, ... }:
-{
-  home.packages = [ pkgs.matugen ];
+{pkgs, ...}: {
+  home.packages = [pkgs.matugen];
 
   # config.toml — defines template → output mappings.
   # matugen is triggered manually or by the wallpaper-change script.

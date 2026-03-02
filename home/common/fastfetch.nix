@@ -1,6 +1,5 @@
-{ pkgs, ... }:
-{
-  home.packages = [ pkgs.fastfetch ];
+{pkgs, ...}: {
+  home.packages = [pkgs.fastfetch];
 
   # Config is written to ~/.config/fastfetch/config.jsonc.
   # fastfetch is called at shell start from zsh.nix's initContent.
