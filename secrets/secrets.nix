@@ -18,6 +18,8 @@ in {
   "work-dev-ca.age".publicKeys = masters ++ [bastion];
   "work-ike-ca.age".publicKeys = masters ++ [bastion];
 
+  "work-docker-registries.age".publicKeys = masters; # ++ [ forge ] after first install
+
   "work-dns-domains.age".publicKeys = masters ++ [bastion];
   "dns-development.age".publicKeys = masters ++ [bastion];
   "dns-production.age".publicKeys = masters ++ [bastion];

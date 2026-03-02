@@ -16,6 +16,7 @@
     ../../modules/work/vpn.nix
     ../../modules/work/certs.nix
     ../../modules/work/dns.nix
+    ../../modules/work/docker.nix
     ../../modules/work/apps.nix
     ../../modules/dev/php.nix
   ];
