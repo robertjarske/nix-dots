@@ -3,7 +3,7 @@ let
   yubikey2 = "age1yubikey1q233vgvezsfxkyat8cvwwcmzcnww3rhj4d3qss5vfv5yyh9q06kw5rch6ux";
   masters = [yubikey1 yubikey2];
 
-  bastion = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPFF3Vlg/2qfU1jd3lSLu3CNKQpTnjtu3QUtVejSYvIw root@nixos";
+  bastion = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPE6mrKLP7qxqaQfIKZbbVx6LyNTLRPYG+MEP+Zcm6Ln root@nixos";
   # forge = "ssh-ed25519 AAAA...";  # add after first install
 in {
   "wifi-blackbox.age".publicKeys = masters ++ [bastion]; # ++ [ forge ] after first install
