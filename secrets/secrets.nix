@@ -4,23 +4,23 @@ let
   masters = [yubikey1 yubikey2];
 
   bastion = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPE6mrKLP7qxqaQfIKZbbVx6LyNTLRPYG+MEP+Zcm6Ln root@nixos";
-  # forge = "ssh-ed25519 AAAA...";  # add after first install
+  forge = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC2AL9yooB6b3rFKhHAH2ZQrh0rbt+g5FVvuD1G7mVui root@nixos";
 in {
-  "wifi-blackbox.age".publicKeys = masters ++ [bastion]; # ++ [ forge ] after first install
-  "wifi-blackbox-5g.age".publicKeys = masters ++ [bastion];
-  "wifi-blackbox-5g-2.age".publicKeys = masters ++ [bastion];
-  "wifi-blackbox-6g.age".publicKeys = masters ++ [bastion];
+  "wifi-blackbox.age".publicKeys = masters ++ [bastion forge];
+  "wifi-blackbox-5g.age".publicKeys = masters ++ [bastion forge];
+  "wifi-blackbox-5g-2.age".publicKeys = masters ++ [bastion forge];
+  "wifi-blackbox-6g.age".publicKeys = masters ++ [bastion forge];
 
-  "work-wifi.age".publicKeys = masters; # ++ [ forge ] after first install
-  "work-ssh-ad.age".publicKeys = masters; # ++ [ forge ] after first install
-  "work-vpn.age".publicKeys = masters ++ [bastion]; # ++ [ forge ] after first install
-  "work-root-ca.age".publicKeys = masters ++ [bastion]; # ++ [ forge ] after first install
-  "work-dev-ca.age".publicKeys = masters ++ [bastion];
-  "work-ike-ca.age".publicKeys = masters ++ [bastion];
+  "work-wifi.age".publicKeys = masters ++ [forge];
+  "work-ssh-ad.age".publicKeys = masters ++ [forge];
+  "work-vpn.age".publicKeys = masters ++ [forge];
+  "work-root-ca.age".publicKeys = masters ++ [forge];
+  "work-dev-ca.age".publicKeys = masters ++ [forge];
+  "work-ike-ca.age".publicKeys = masters ++ [forge];
 
-  "work-docker-registries.age".publicKeys = masters; # ++ [ forge ] after first install
+  "work-docker-registries.age".publicKeys = masters ++ [forge];
 
-  "work-dns-domains.age".publicKeys = masters ++ [bastion];
-  "dns-development.age".publicKeys = masters ++ [bastion];
-  "dns-production.age".publicKeys = masters ++ [bastion];
+  "work-dns-domains.age".publicKeys = masters ++ [forge];
+  "dns-development.age".publicKeys = masters ++ [forge];
+  "dns-production.age".publicKeys = masters ++ [forge];
 }
