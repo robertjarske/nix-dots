@@ -3,8 +3,8 @@ let
   yubikey2 = "age1yubikey1q233vgvezsfxkyat8cvwwcmzcnww3rhj4d3qss5vfv5yyh9q06kw5rch6ux";
   masters = [yubikey1 yubikey2];
 
-  bastion = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPE6mrKLP7qxqaQfIKZbbVx6LyNTLRPYG+MEP+Zcm6Ln root@nixos";
-  forge = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC2AL9yooB6b3rFKhHAH2ZQrh0rbt+g5FVvuD1G7mVui root@nixos";
+  bastion = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPE6mrKLP7qxqaQfIKZbbVx6LyNTLRPYG+MEP+Zcm6Ln";
+  forge = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM0DdhyvMDcxuzzHyvsAaOuH7PHvNPHlwld6YJWZwYZz";
 in {
   "wifi-blackbox.age".publicKeys = masters ++ [bastion forge];
   "wifi-blackbox-5g.age".publicKeys = masters ++ [bastion forge];
