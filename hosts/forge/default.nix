@@ -22,6 +22,7 @@
   ];
 
   host = {
+    hibernation.resumeOffset = 533760;
     secureboot.enable = true;
     # NVIDIA PRIME offload — verify bus IDs with: lspci | grep -E "VGA|3D"
     nvidia = {
@@ -84,6 +85,7 @@
     _1password-cli
     _1password-gui
     firefox
+    bolt
   ];
 
   programs._1password.enable = true;

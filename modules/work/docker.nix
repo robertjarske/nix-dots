@@ -38,6 +38,7 @@
     text = ''
       secret="${config.age.secrets.work-docker-registries.path}"
       if [ ! -f "$secret" ]; then exit 0; fi
+      if [ ! -e /etc/docker/daemon.json ]; then exit 0; fi
 
       base=$(cat "$(readlink -f /etc/docker/daemon.json)")
       registries=$(cat "$secret")

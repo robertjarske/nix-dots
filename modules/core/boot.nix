@@ -24,6 +24,13 @@
 
   config = lib.mkMerge [
     {
+      # /nix lives on a separate BTRFS subvolume (@nix). The systemd initrd must
+      # mount it before switch_root, otherwise the init binary at
+      # /nix/store/.../init is unreachable and boot fails with
+      # "[!!!!] switch root contains no usable init".
+      # Disko does not set neededForBoot automatically, so we set it here.
+      fileSystems."/nix".neededForBoot = true;
+
       boot = {
         loader = {
           systemd-boot = {
