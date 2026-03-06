@@ -43,13 +43,6 @@
 
   hardware.nvidia-container-toolkit.enable = true;
 
-  programs.nh = {
-    enable = true;
-    flake = "/home/serobja/code/nix-dots";
-    clean.enable = true;
-    clean.extraArgs = "--keep-since 7d --keep 10";
-  };
-
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
 
   system.activationScripts = {
@@ -81,10 +74,18 @@
     just
   ];
 
-  programs._1password.enable = true;
-  programs._1password-gui = {
-    enable = true;
-    polkitPolicyOwners = ["serobja"];
+  programs = {
+    nh = {
+      enable = true;
+      flake = "/home/serobja/code/nix-dots";
+      clean.enable = true;
+      clean.extraArgs = "--keep-since 7d --keep 10";
+    };
+    _1password.enable = true;
+    _1password-gui = {
+      enable = true;
+      polkitPolicyOwners = ["serobja"];
+    };
   };
 
   # Allow Vivaldi's native binary to communicate with the 1Password desktop app

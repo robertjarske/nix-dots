@@ -1,4 +1,8 @@
-{pkgs, unstable, ...}: {
+{
+  pkgs,
+  unstable,
+  ...
+}: {
   # Required for dconf/GSettings to work in user sessions — without this,
   # dark mode preference and GTK settings written by home-manager don't persist.
   programs.dconf.enable = true;
