@@ -12,8 +12,5 @@
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.sddm.enableGnomeKeyring = true;
 
-  environment.systemPackages = with pkgs; [
-    kdePackages.sddm
-    catppuccin-sddm
-  ];
+  environment.systemPackages = [pkgs.catppuccin-sddm];
 }

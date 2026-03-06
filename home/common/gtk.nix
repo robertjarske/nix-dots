@@ -33,10 +33,12 @@
     x11.enable = true;
   };
 
-  # dconf — some GTK4/GNOME apps read dark mode preference from here
+  # dconf — GTK4/libadwaita apps and portal dialogs read preferences from here
   dconf.settings."org/gnome/desktop/interface" = {
     color-scheme = "prefer-dark";
     gtk-theme = "catppuccin-mocha-mauve-standard";
     icon-theme = "Papirus-Dark";
+    cursor-theme = "catppuccin-mocha-dark-cursors";
+    cursor-size = 24;
   };
 }

@@ -16,20 +16,32 @@
     ./common/vscode.nix
     ./common/mpv.nix
     ./common/direnv.nix
+    ./common/xdg.nix
   ];
 
-  # Work SSH hosts live in a locally-managed file not tracked in git.
-  # Real server hostnames / AD domain names stay out of the public repo.
-  # On forge, create ~/.config/ssh/work-hosts — see 1Password note "forge setup".
-  programs.ssh.extraConfig = "Include ~/.config/ssh/work-hosts";
+  programs = {
+    # Work SSH hosts live in a locally-managed file, not tracked in git.
+    ssh.extraConfig = "Include ~/.config/ssh/work-hosts";
 
-  # Work identity loaded from a locally-managed file, not tracked in this repo.
-  # On forge, create ~/.config/git/local-identity once:
-  #   mkdir -p ~/.config/git
-  #   printf '[user]\n  email = your.work@email.com\n' > ~/.config/git/local-identity
-  programs.git.includes = [
-    {path = "~/.config/git/local-identity";}
-  ];
+    zsh.shellAliases = {
+      apps = "cd ~/code/applications";
+      core = "cd ~/code/core";
+      common = "cd ~/code/common";
+      socket-server = "cd ~/code/socket-server";
+      buildserver = "s buildserver";
+      docker-server = "s docker-server";
+      docker-server2 = "s docker-server2";
+      docker-server3 = "s docker-server3";
+      prod = "s prod";
+      gitlab = "s gitlab";
+    };
+
+    # Identity (name + work email) loaded from a locally-managed file, not tracked in this repo.
+    # On first setup: printf '[user]\n  name = ...\n  email = ...\n' > ~/.config/git/local-identity
+    git.includes = [
+      {path = "~/.config/git/local-identity";}
+    ];
+  };
 
   wayland.windowManager.hyprland = {
     # NVIDIA-specific env vars for Hyprland session
@@ -41,6 +53,10 @@
       env = AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1
     '';
     settings = {
+      # NVIDIA: let Hyprland auto-detect whether hardware cursors work.
+      # Replaces the legacy WLR_NO_HARDWARE_CURSORS env var.
+      # 0 = force hardware, 1 = force software, 2 = auto (recommended for NVIDIA)
+      cursor.no_hardware_cursors = 2;
       monitor = [
         "eDP-1,3200x2000@120,0x0,2"
         "DP-5,2560x1440@75,1600x0,1"

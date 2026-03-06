@@ -62,6 +62,12 @@
       };
 
       plugins = [
+        # fzf-tab must come before autosuggestions/syntax-highlighting
+        {
+          name = "fzf-tab";
+          src = pkgs.zsh-fzf-tab;
+          file = "share/fzf-tab/fzf-tab.zsh";
+        }
         {
           name = "zsh-autosuggestions";
           src = pkgs.zsh-autosuggestions;
@@ -96,21 +102,10 @@
         fix = "git add . && git commit -m 'fix' && git push";
         gempty = "git commit --allow-empty --allow-empty-message -m '' && git push";
 
-        # --- Work: project dirs ---
-        apps = "cd ~/code/applications";
-        core = "cd ~/code/core";
-        common = "cd ~/code/common";
-        socket-server = "cd ~/code/socket-server";
         dots = "cd ~/code/nix-dots";
 
-        # --- SSH shortcuts (kitten ssh preserves kitty terminal protocol over SSH) ---
+        # kitten ssh preserves the kitty terminal protocol over SSH
         s = "kitten ssh";
-        buildserver = "s buildserver";
-        docker-server = "s docker-server";
-        docker-server2 = "s docker-server2";
-        docker-server3 = "s docker-server3";
-        prod = "s prod";
-        gitlab = "s gitlab";
 
         # --- Snapper / @home snapshots ---
         snaps = "snapper -c home list"; # list all home snapshots
@@ -134,6 +129,14 @@
       };
 
       initContent = ''
+        # --- Autosuggestion color (default fg=8 is too dim) ---
+        ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#ffff00,bg=#808000,bold,underline"
+
+        # --- fzf-tab: subcommand descriptions on Tab (git, docker, systemctl, etc.) ---
+        zstyle ':completion:*' verbose yes
+        zstyle ':completion:*:descriptions' format '[%d]'
+        zstyle ':fzf-tab:*' switch-group '<' '>'
+
         # --- Word navigation: Ctrl+Left/Right jump words rather than deleting ---
         # Kitty sends \e[1;5D (left) and \e[1;5C (right) for Ctrl+arrow.
         bindkey "^[[1;5C" forward-word

@@ -27,8 +27,6 @@ in {
     };
 
     configFile."rofi/master-config.rasi".text = ''
-      /* Rofi config */
-
       /*****----- Configuration -----*****/
       configuration {
           font:                 "Fira Code SemiBold 8";
@@ -318,8 +316,6 @@ in {
       }
     '';
   };
-
-  # Per-resolution overrides for 1440p external monitors
 
   # matugen/colors-rofi.rasi is generated at runtime from the current wallpaper.
   # Recreate the fallback if missing OR if it has the old format (migration).

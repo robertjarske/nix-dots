@@ -1,6 +1,7 @@
 {pkgs, ...}: {
   imports = [
     ./hardware-configuration.nix
+    ../../modules/hardware/thunderbolt-dock.nix
     ../../modules/desktop/hyprland.nix
     ../../modules/desktop/sddm.nix
     ../../modules/desktop/audio.nix
