@@ -18,24 +18,36 @@
   # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [pkgs.matugen pkgs.jq pkgs.util-linux];
+    runtimeInputs = [pkgs.matugen pkgs.jq pkgs.util-linux pkgs.git];
     text = ''
       # Prevent concurrent runs — rapid invocations would preload multiple
       # wallpapers without unloading them, eventually crashing hyprpaper.
       exec 9>/tmp/wallpaper-change.lock
       flock -n 9 || exit 0
 
-      wallpaper=$(find "$HOME/Pictures/wallpapers" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
+      wallpapers_dir="$HOME/Pictures/wallpapers"
 
-      # No wallpapers yet (clone hasn't run or failed) — exit cleanly.
-      # hyprpaper is already showing the nix-store fallback.
+      # Self-heal: clone on first login, pull on subsequent logins.
+      # Activation-time sync (syncWallpapers) is the authoritative path on
+      # rebuilds; this catches cases where that clone failed (e.g. offline).
+      if [ ! -d "$wallpapers_dir" ]; then
+        mkdir -p "$(dirname "$wallpapers_dir")"
+        git clone https://github.com/robertjarske/wallpapers "$wallpapers_dir" \
+          || { echo "wallpaper-change: clone failed, using fallback"; exit 0; }
+      else
+        git -C "$wallpapers_dir" pull --ff-only 2>/dev/null || true
+      fi
+
+      wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
+
+      # No wallpapers found even after clone attempt — exit cleanly.
       [ -n "$wallpaper" ] || exit 0
 
       hyprctl hyprpaper preload "$wallpaper"
       while IFS= read -r monitor; do
         hyprctl hyprpaper wallpaper "$monitor,$wallpaper"
       done < <(hyprctl monitors -j | jq -r '.[].name')
-      # Release wallpapers that are no longer displayed.
+      # Release preloaded images that are no longer displayed.
       hyprctl hyprpaper unload all
 
       # Rofi inputbar background
@@ -307,6 +319,7 @@ in {
 
       exec-once = [
         "hyprpolkitagent"
+        "udiskie --tray"
         "nm-applet --indicator"
         "yubikey-touch-detector --libnotify"
         "hypridle"

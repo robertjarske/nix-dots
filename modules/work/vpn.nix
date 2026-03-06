@@ -11,6 +11,15 @@
   };
 in {
   networking.networkmanager.plugins = [nm-strongswan];
+
+  networking.firewall = {
+    allowedUDPPorts = [500 4500];
+    # Loose reverse-path filtering — strict mode drops decrypted VPN packets
+    # because the inner packet's source address has no route back via the
+    # physical interface (it's only reachable via the XFRM tunnel interface).
+    checkReversePath = "loose";
+  };
+
   age.secrets.work-vpn.file = ../../secrets/work-vpn.age;
 
   environment.etc."strongswan.conf".text = ''

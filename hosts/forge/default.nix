@@ -6,6 +6,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/hardware/nvidia.nix
+    ../../modules/hardware/thunderbolt-dock.nix
     ../../modules/desktop/hyprland.nix
     ../../modules/desktop/sddm.nix
     ../../modules/desktop/audio.nix
@@ -19,12 +20,20 @@
     ../../modules/work/docker.nix
     ../../modules/work/apps.nix
     ../../modules/dev/php.nix
+    ../../modules/dev/python.nix
   ];
+
+  networking.hosts = {
+    "127.0.0.1" = [
+      "local.pipechain.net"
+      "core.local.pipechain.net"
+      "traefik.local.pipechain.net"
+    ];
+  };
 
   host = {
     hibernation.resumeOffset = 533760;
     secureboot.enable = true;
-    # NVIDIA PRIME offload — verify bus IDs with: lspci | grep -E "VGA|3D"
     nvidia = {
       intelBusId = "PCI:0:2:0";
       nvidiaBusId = "PCI:1:0:0";
@@ -40,27 +49,7 @@
 
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
 
-  # Work SSH key for AD-joined servers (placed at ~/.ssh/work_ad).
-  age.secrets.work-ssh-ad = {
-    file = ../../secrets/work-ssh-ad.age;
-    path = "/home/serobja/.ssh/work_ad";
-    owner = "serobja";
-    mode = "0600";
-  };
-
   system.activationScripts = {
-    # Derive work_ad.pub from the private key (not sensitive, not an agenix secret).
-    work-ssh-ad-pubkey = {
-      deps = ["agenix"];
-      text = ''
-        if [ -e /home/serobja/.ssh/work_ad ]; then
-          ${pkgs.openssh}/bin/ssh-keygen -y -f /home/serobja/.ssh/work_ad \
-            > /home/serobja/.ssh/work_ad.pub 2>/dev/null || true
-          chmod 644 /home/serobja/.ssh/work_ad.pub
-        fi
-      '';
-    };
-
     nm-work-wifi-setup = {
       deps = ["agenix"];
       text = ''
@@ -85,13 +74,21 @@
     _1password-cli
     _1password-gui
     firefox
-    bolt
+    gnumake
+    just
   ];
 
   programs._1password.enable = true;
   programs._1password-gui = {
     enable = true;
     polkitPolicyOwners = ["serobja"];
+  };
+
+  # Allow Vivaldi's native binary to communicate with the 1Password desktop app
+  # so the browser extension unlocks when the tray icon is unlocked.
+  environment.etc."1password/custom_allowed_browsers" = {
+    text = "vivaldi-bin\n";
+    mode = "0644";
   };
 
   services.openssh = {

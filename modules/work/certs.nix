@@ -38,6 +38,16 @@
       install -m 0644 ${config.age.secrets.work-root-ca.path} /etc/work-certs/work-root-ca.pem
       install -m 0644 ${config.age.secrets.work-dev-ca.path}  /etc/work-certs/work-dev-ca.pem
       install -m 0644 ${config.age.secrets.work-ike-ca.path}  /etc/work-certs/work-ike-ca.pem
+
+      # Compat symlinks so project .npmrc / .yarnrc.yml paths work unchanged.
+      # /etc/ssl/certs/ca-certificates.crt is the Debian/Ubuntu standard used in
+      # project .npmrc files; /usr/local/share/ca-certificates/ca.crt is where
+      # Ubuntu stores custom CAs (used in project .yarnrc.yml files).
+      # Both are reset here after the NixOS `etc` activation phase so they point
+      # to the bundle that includes the work CAs.
+      ln -sf /run/work-certs/ca-bundle.pem /etc/ssl/certs/ca-certificates.crt
+      mkdir -p /usr/local/share/ca-certificates
+      ln -sf /run/work-certs/ca-bundle.pem /usr/local/share/ca-certificates/ca.crt
     '';
   };
 
