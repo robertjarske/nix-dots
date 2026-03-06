@@ -1,10 +1,12 @@
-{pkgs, ...}: {
+{pkgs, unstable, ...}: {
   # Required for dconf/GSettings to work in user sessions — without this,
   # dark mode preference and GTK settings written by home-manager don't persist.
   programs.dconf.enable = true;
 
   programs.hyprland = {
     enable = true;
+    package = unstable.hyprland;
+    portalPackage = unstable.xdg-desktop-portal-hyprland;
     xwayland.enable = true;
   };
 
@@ -12,7 +14,7 @@
   xdg.portal = {
     enable = true;
     extraPortals = [
-      pkgs.xdg-desktop-portal-hyprland
+      unstable.xdg-desktop-portal-hyprland
       pkgs.xdg-desktop-portal-gtk # needed for GTK file pickers and app choosers
     ];
     # Keyed to XDG_CURRENT_DESKTOP=Hyprland (matched case-insensitively).
@@ -42,7 +44,7 @@
     hyprlock # Lock screen
     hypridle # Idle management
     hyprpolkitagent # Polkit authentication agent
-    hyprshot # Screenshots
+    grimblast # Screenshots (area/window/output selection, copies to clipboard + saves file)
     wl-clipboard # Wayland clipboard (wl-copy/wl-paste)
     cliphist # Clipboard history
     brightnessctl # Brightness control

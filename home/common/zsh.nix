@@ -110,15 +110,22 @@
         # --- Snapper / @home snapshots ---
         snaps = "snapper -c home list"; # list all home snapshots
 
+        # --- Distrobox ---
+        db-list = "distrobox list";
+        db-enter = "distrobox enter";
+        db-rm = "distrobox rm";
+
         # --- Nix dev shells ---
         ds = "nix develop"; # enter current project's dev shell
         nsh = "nix shell"; # quick: nix shell nixpkgs#foo
 
         # --- Nix system management ---
-        nrs = "sudo nixos-rebuild switch --flake ~/code/nix-dots#$(hostname)";
+        nrs = "nh os switch ~/code/nix-dots"; # build + switch, shows package diff
+        nrt = "nh os test ~/code/nix-dots"; # switch without adding to boot menu
+        nfu = "cd ~/code/nix-dots && nix flake update"; # update all flake inputs
         ngen = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system";
-        ngc = "sudo nix-collect-garbage -d";
-        nss = "nix search nixpkgs";
+        ngc = "nh clean all"; # remove old generations + gc
+        nss = "nh search";
 
         # --- Config quick-open ---
         zsh_config = "nvim ~/code/nix-dots/home/common/zsh.nix";
@@ -188,6 +195,61 @@
           echo "Restoring: $src"
           echo "       to: $dst"
           cp -ri "$src" "$dst"
+        }
+
+        # --- Distrobox helpers ---
+        # Usage: db-new <name> <image>   e.g. db-new ubuntu ubuntu:22.04
+        db-new() {
+          local name="''${1:?Usage: db-new <name> <image>}"
+          local image="''${2:?Usage: db-new <name> <image>}"
+          distrobox create --name "$name" --image "$image"
+        }
+
+        db-help() {
+          echo "distrobox — run any Linux distro as a container on NixOS"
+          echo ""
+          echo "  db-list                      list all containers"
+          echo "  db-enter <name>              enter container shell"
+          echo "  db-new <name> <image>        create container"
+          echo "    e.g. db-new ubuntu ubuntu:22.04"
+          echo "    e.g. db-new arch archlinux:latest"
+          echo "  db-rm <name>                 remove container"
+          echo ""
+          echo "  Inside the container:"
+          echo "    distrobox-export --app <app>   expose a GUI app to the host"
+          echo "    distrobox-export --bin <path>  expose a binary to the host"
+          echo ""
+          echo "  Uses Podman under the hood (no root needed)."
+        }
+
+        # --- nix-ld ---
+        nixld-help() {
+          echo "nix-ld — run pre-compiled (FHS) Linux binaries on NixOS"
+          echo ""
+          echo "  Just run the binary directly. nix-ld patches the dynamic linker"
+          echo "  so standard ELF binaries work without modification."
+          echo ""
+          echo "  If a binary still fails (missing libs not in the default set):"
+          echo "    nix shell nixpkgs#steam-run -c steam-run ./mybinary"
+          echo ""
+          echo "  Or wrap a single invocation in an FHS shell:"
+          echo "    nix-shell -p steam-run --run 'steam-run ./mybinary'"
+          echo ""
+          echo "  Libraries already provided: zlib, openssl, curl, gtk3,"
+          echo "  wayland, mesa, libGL, alsa-lib, and more."
+          echo "  To add more: edit modules/compat/nix-ld.nix"
+        }
+
+        # --- Nix dots linting (mirrors CI: statix + deadnix + alejandra) ---
+        nlint() {
+          local dots="$HOME/code/nix-dots"
+          echo "==> statix" \
+            && nix run nixpkgs#statix -- check "$dots" \
+            && echo "==> deadnix" \
+            && nix run nixpkgs#deadnix -- --fail "$dots" \
+            && echo "==> alejandra (fmt check)" \
+            && nix fmt "$dots" -- --check . \
+            && echo "✓ all checks passed"
         }
 
         # --- Nix package version checks ---

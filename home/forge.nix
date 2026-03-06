@@ -1,4 +1,8 @@
-{...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     ./common/zsh.nix
     ./common/kitty.nix
@@ -6,6 +10,7 @@
     ./common/git.nix
     ./common/neovim.nix
     ./common/gtk.nix
+    ./common/qt.nix
     ./common/hyprland.nix
     ./common/rofi.nix
     ./common/matugen.nix
@@ -24,6 +29,10 @@
     ssh.extraConfig = "Include ~/.config/ssh/work-hosts";
 
     zsh.shellAliases = {
+      nvdriver = "nvidia-smi --query-gpu=driver_version --format=csv,noheader";
+      nvkernel = "uname -r";
+      btop = "LD_LIBRARY_PATH=/run/opengl-driver/lib ${pkgs.btop}/bin/btop";
+
       apps = "cd ~/code/applications";
       core = "cd ~/code/core";
       common = "cd ~/code/common";
@@ -44,13 +53,11 @@
   };
 
   wayland.windowManager.hyprland = {
-    # NVIDIA-specific env vars for Hyprland session
     extraConfig = ''
       env = LIBVA_DRIVER_NAME,nvidia
       env = GBM_BACKEND,nvidia-drm
       env = __GLX_VENDOR_LIBRARY_NAME,nvidia
       env = NVD_BACKEND,direct
-      env = AQ_DRM_DEVICES,/dev/dri/card0:/dev/dri/card1
     '';
     settings = {
       # NVIDIA: let Hyprland auto-detect whether hardware cursors work.
@@ -76,9 +83,22 @@
         "9,monitor:eDP-1,default:true"
         "10,monitor:eDP-1"
       ];
-      # Start vivaldi on workspace 6 (right external monitor)
-      exec-once = ["[workspace 6 silent] vivaldi"];
+      # Teams for Linux always opens on workspace 5 (right external monitor)
+      # Hyprland 0.53+ requires match:class prefix (old class: syntax removed)
+      windowrule = ["workspace 5 silent, match:class ^(teams-for-linux)$"];
+
+      exec-once = [
+        "[workspace 6 silent] vivaldi"
+        "[workspace 5 silent] teams-for-linux"
+      ];
     };
+  };
+
+  # Azure Data Studio (VS Code-based) reads argv.json before starting.
+  # Same gnome-libsecret fix as VS Code.
+  home.file.".config/azuredatastudio/argv.json" = {
+    text = builtins.toJSON {"password-store" = "gnome-libsecret";};
+    force = true;
   };
 
   home.stateVersion = "25.11";

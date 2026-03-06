@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   vscodeExtensions,
   ...
@@ -7,6 +8,22 @@
   mkt = vscodeExtensions.vscode-marketplace;
 in {
   home.packages = [pkgs.alejandra];
+
+  # Patch argv.json in-place so VS Code keeps its crash-reporter-id and any
+  # other settings it manages. Runs after writeBoundary so the home dir exists.
+  # If the file doesn't exist yet, create it with minimal content.
+  home.activation.vsCodeArgvPasswordStore = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    argv_json="$HOME/.vscode/argv.json"
+    mkdir -p "$(dirname "$argv_json")"
+    if [ -f "$argv_json" ] && [ ! -L "$argv_json" ]; then
+      tmp=$(mktemp)
+      ${pkgs.jq}/bin/jq '.["password-store"] = "gnome-libsecret"' "$argv_json" > "$tmp" \
+        && mv "$tmp" "$argv_json"
+    elif [ ! -e "$argv_json" ]; then
+      printf '{"password-store":"gnome-libsecret"}\n' > "$argv_json"
+    fi
+  '';
+
   programs.vscode = {
     enable = true;
     mutableExtensionsDir = true;
@@ -38,7 +55,7 @@ in {
         # --- PHP ---
         mkt.bmewburn.vscode-intelephense-client
         mkt.wongjn.php-sniffer
-        mkt.ikappas.phpcs
+        mkt.shevaua.phpcs
 
         # --- Python ---
         mkt.ms-python.python

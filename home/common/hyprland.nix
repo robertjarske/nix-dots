@@ -2,6 +2,8 @@
   config,
   pkgs,
   lib,
+  unstable,
+  hyprpanel,
   ...
 }: let
   # Solid Catppuccin Mocha base (#1e1e2e) fallback used by hyprpaper at service
@@ -14,11 +16,35 @@
       convert -size 1920x1080 xc:'#1e1e2e' "$out"
     '';
 
+  # Listens on Hyprland's event socket and re-runs wallpaper-change whenever a
+  # monitor is added. This fixes dock monitors not getting a wallpaper on login
+  # (Thunderbolt enumeration is slower than the initial 2-second delay).
+  wallpaper-monitor-listener = pkgs.writeShellApplication {
+    name = "wallpaper-monitor-listener";
+    runtimeInputs = [pkgs.socat];
+    text = ''
+      # Wait until the Hyprland socket is available.
+      until [ -S "$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock" ]; do
+        sleep 0.5
+      done
+
+      socat -u \
+        UNIX-CONNECT:"$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock" \
+        - | while IFS= read -r line; do
+          if [[ "$line" == monitoradded* ]]; then
+            # Brief delay for the monitor to be fully initialized before applying.
+            sleep 1
+            wallpaper-change
+          fi
+        done
+    '';
+  };
+
   # Changes the wallpaper via hyprpaper IPC and regenerates Material You colors.
   # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [pkgs.matugen pkgs.jq pkgs.util-linux pkgs.git];
+    runtimeInputs = [pkgs.matugen pkgs.jq pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
       # Prevent concurrent runs — rapid invocations would preload multiple
       # wallpapers without unloading them, eventually crashing hyprpaper.
@@ -43,23 +69,37 @@
       # No wallpapers found even after clone attempt — exit cleanly.
       [ -n "$wallpaper" ] || exit 0
 
-      hyprctl hyprpaper preload "$wallpaper"
+      # Track previous wallpaper so we can unload it after switching.
+      # Avoids "hyprpaper unload all" which errors in newer hyprpaper when
+      # there are no unused wallpapers to unload (set -e would abort the script).
+      prev_state="/tmp/wallpaper-prev"
+      prev_wallpaper=""
+      [ -f "$prev_state" ] && prev_wallpaper=$(cat "$prev_state")
+
+      hyprctl hyprpaper preload "$wallpaper" || true
       while IFS= read -r monitor; do
         hyprctl hyprpaper wallpaper "$monitor,$wallpaper"
       done < <(hyprctl monitors -j | jq -r '.[].name')
-      # Release preloaded images that are no longer displayed.
-      hyprctl hyprpaper unload all
+
+      # Persist current path so the next run can unload it.
+      printf '%s' "$wallpaper" > "$prev_state"
+
+      # Unload the previous wallpaper now that no monitor is displaying it.
+      if [ -n "$prev_wallpaper" ] && [ "$prev_wallpaper" != "$wallpaper" ]; then
+        hyprctl hyprpaper unload "$prev_wallpaper" || true
+      fi
 
       # Rofi inputbar background
       ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
 
       matugen image "$wallpaper"
       pkill -USR1 kitty || true
+      hyprpanel useTheme "$HOME/.config/ags/hyprpanel-matugen-theme.json" || true
     '';
   };
 in {
   home = {
-    packages = [wallpaper-change];
+    packages = [wallpaper-change wallpaper-monitor-listener];
     activation = {
       # Catppuccin Mocha fallback so `source` doesn't error on first boot before
       # matugen has run. Only the variables actually used in the config are needed.
@@ -95,6 +135,10 @@ in {
   # 2 seconds after login (exec-once below).
   services.hyprpaper = {
     enable = true;
+    # Match the unstable Hyprland version to avoid IPC protocol mismatches.
+    # Stable hyprpaper uses an older wire protocol that newer hyprctl rejects
+    # with "invalid message recvd (invalid type code)".
+    package = unstable.hyprpaper;
     settings = {
       splash = false;
       ipc = true;
@@ -142,6 +186,7 @@ in {
 
   wayland.windowManager.hyprland = {
     enable = true;
+    package = unstable.hyprland;
     settings = {
       # Catch-all: any monitor not matched by a host-specific rule gets its
       # preferred resolution, auto-placed, at scale 1.
@@ -185,6 +230,7 @@ in {
 
       input = {
         kb_layout = "se";
+        numlock_by_default = true;
         follow_mouse = 1;
         touchpad = {
           natural_scroll = true;
@@ -229,7 +275,7 @@ in {
         # Apps
         "$mod, Return, exec, kitty"
         "$mod, E, exec, nautilus"
-        "$mod, R, exec, pkill rofi || rofi -show drun -modi drun,filebrowser,run,window"
+        "$mod, Space, exec, pkill rofi || rofi -show drun -modi drun,filebrowser,run,window"
 
         # Window management
         "$mod, Q, killactive"
@@ -284,10 +330,10 @@ in {
         # Wallpaper
         "CTRL ALT, W, exec, wallpaper-change"
 
-        # Screenshots
-        ", Print, exec, hyprshot -m output"
-        "SHIFT, Print, exec, hyprshot -m region"
-        "$mod, Print, exec, hyprshot -m window"
+        # Screenshots — grimblast copies to clipboard AND saves to ~/Pictures/Screenshots/
+        ", Print, exec, bash -c 'mkdir -p $HOME/Pictures/Screenshots && grimblast copysave output $HOME/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png'"
+        "SHIFT, Print, exec, bash -c 'mkdir -p $HOME/Pictures/Screenshots && grimblast copysave area $HOME/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png'"
+        "$mod, Print, exec, bash -c 'mkdir -p $HOME/Pictures/Screenshots && grimblast copysave active $HOME/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png'"
 
         # Clipboard history picker
         "$mod SHIFT, V, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
@@ -330,6 +376,8 @@ in {
         # Apply random wallpaper and generate Material You colors on login.
         # Small delay ensures hyprpaper is ready to accept IPC commands.
         "bash -c 'sleep 2 && wallpaper-change'"
+        # Re-apply wallpaper to any monitor added after login (e.g. dock).
+        "wallpaper-monitor-listener"
       ];
     };
   };
