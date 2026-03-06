@@ -34,10 +34,6 @@
   host = {
     hibernation.resumeOffset = 533760;
     secureboot.enable = true;
-    nvidia = {
-      intelBusId = "PCI:0:2:0";
-      nvidiaBusId = "PCI:1:0:0";
-    };
   };
 
   # Pin to LTS kernel — NVIDIA 580.119.02 is incompatible with 6.19.x
@@ -46,6 +42,13 @@
   boot.kernelPackages = pkgs.linuxPackages;
 
   hardware.nvidia-container-toolkit.enable = true;
+
+  programs.nh = {
+    enable = true;
+    flake = "/home/serobja/code/nix-dots";
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 7d --keep 10";
+  };
 
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
 

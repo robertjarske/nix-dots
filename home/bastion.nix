@@ -6,6 +6,7 @@
     ./common/git.nix
     ./common/neovim.nix
     ./common/gtk.nix
+    ./common/qt.nix
     ./common/hyprland.nix
     ./common/rofi.nix
     ./common/matugen.nix

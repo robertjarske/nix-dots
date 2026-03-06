@@ -14,6 +14,13 @@
   host.hibernation.resumeOffset = 533760;
   host.secureboot.enable = true;
 
+  programs.nh = {
+    enable = true;
+    flake = "/home/serobja/code/nix-dots";
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 7d --keep 10";
+  };
+
   environment.systemPackages = with pkgs; [
     git
     vim

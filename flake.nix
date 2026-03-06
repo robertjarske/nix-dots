@@ -114,7 +114,7 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              extraSpecialArgs = {inherit hyprpanel vscodeExtensions;};
+              extraSpecialArgs = {inherit hyprpanel vscodeExtensions unstable;};
               users.${username} = homeModule;
             };
           }

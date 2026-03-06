@@ -18,14 +18,6 @@ _: {
       ];
     };
 
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      # Keep at least 10 generations regardless of age, plus everything from
-      # the last 14 days. Prevents unbounded accumulation during active weeks.
-      options = "--delete-older-than 14d --keep-last 10";
-    };
-
     # Deduplicate the store weekly on a schedule rather than on every build.
     # auto-optimise-store adds overhead to each individual build operation.
     optimise = {

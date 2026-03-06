@@ -8,8 +8,11 @@
   };
 
   environment.systemPackages = with pkgs; [
-    google-chrome
-    vivaldi
+    # --password-store=gnome-libsecret: tells Chromium-based browsers to use the
+    # GNOME libsecret backend. Required on Hyprland because XDG_CURRENT_DESKTOP=Hyprland
+    # is not recognised as GNOME by Electron's keyring auto-detection.
+    (google-chrome.override {commandLineArgs = "--password-store=gnome-libsecret";})
+    (vivaldi.override {commandLineArgs = "--password-store=gnome-libsecret";})
     spotify
     nautilus
     udiskie
