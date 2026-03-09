@@ -13,6 +13,7 @@
     ./common/hyprpanel.nix
     ./common/work-certs.nix
     ./common/fastfetch.nix
+    ./common/wlr-which-key.nix
     ./common/ssh.nix
     ./common/vscode.nix
     ./common/mpv.nix

@@ -6,9 +6,8 @@
   hyprpanel,
   ...
 }: let
-  # Solid Catppuccin Mocha base (#1e1e2e) fallback used by hyprpaper at service
-  # startup. Always available in the Nix store — no network or clone required.
-  # wallpaper-change replaces it with a real wallpaper 2 seconds after login.
+  # Solid Catppuccin Mocha base (#1e1e2e) shown immediately on login via swww
+  # before wallpaper-restore fades in the real wallpaper. Always in the Nix store.
   fallbackWallpaper =
     pkgs.runCommand "fallback-wallpaper.png" {
       nativeBuildInputs = [pkgs.imagemagick];
@@ -16,7 +15,7 @@
       convert -size 1920x1080 xc:'#1e1e2e' "$out"
     '';
 
-  # Listens on Hyprland's event socket and re-runs wallpaper-change whenever a
+  # Listens on Hyprland's event socket and re-runs wallpaper-restore whenever a
   # monitor is added. This fixes dock monitors not getting a wallpaper on login
   # (Thunderbolt enumeration is slower than the initial 2-second delay).
   wallpaper-monitor-listener = pkgs.writeShellApplication {
@@ -34,20 +33,54 @@
           if [[ "$line" == monitoradded* ]]; then
             # Brief delay for the monitor to be fully initialized before applying.
             sleep 1
-            wallpaper-change
+            wallpaper-restore
           fi
         done
     '';
   };
 
-  # Changes the wallpaper via hyprpaper IPC and regenerates Material You colors.
-  # Keybind: CTRL+ALT+W  — also runs on startup via exec-once.
+  # Restores the last-used wallpaper from ~/.config/hypr/current_wallpaper on login
+  # and whenever a new monitor is connected. Falls back to a random pick on first run.
+  # Does NOT pull git or acquire a lock — kept lightweight for startup use.
+  # swww img waits for the daemon internally so no explicit delay is needed.
+  wallpaper-restore = pkgs.writeShellApplication {
+    name = "wallpaper-restore";
+    runtimeInputs = [pkgs.swww pkgs.matugen hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    text = ''
+      current_file="$HOME/.config/hypr/current_wallpaper"
+      wallpaper=""
+
+      if [ -f "$current_file" ]; then
+        saved=$(cat "$current_file")
+        [ -f "$saved" ] && wallpaper="$saved"
+      fi
+
+      # First run — no saved wallpaper yet. Pick random and persist it.
+      if [ -z "$wallpaper" ]; then
+        wallpapers_dir="$HOME/Pictures/wallpapers"
+        [ -d "$wallpapers_dir" ] || exit 0
+        wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
+        [ -n "$wallpaper" ] || exit 0
+        mkdir -p "$(dirname "$current_file")"
+        printf '%s' "$wallpaper" > "$current_file"
+      fi
+
+      swww img "$wallpaper" --transition-type fade --transition-duration 1
+      ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
+      matugen image "$wallpaper"
+      matugen --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
+      pkill -USR1 kitty || true
+      hyprpanel useTheme "$HOME/.config/ags/hyprpanel-matugen-theme.json" || true
+    '';
+  };
+
+  # Picks a new random wallpaper, saves it as the current, and applies it with a fade.
+  # Keybind: CTRL+ALT+W — call this when you want to change wallpaper.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [pkgs.matugen pkgs.jq pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    runtimeInputs = [pkgs.swww pkgs.matugen pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
-      # Prevent concurrent runs — rapid invocations would preload multiple
-      # wallpapers without unloading them, eventually crashing hyprpaper.
+      # Prevent concurrent runs — rapid invocations would run matugen in parallel.
       exec 9>/tmp/wallpaper-change.lock
       flock -n 9 || exit 0
 
@@ -59,47 +92,49 @@
       if [ ! -d "$wallpapers_dir" ]; then
         mkdir -p "$(dirname "$wallpapers_dir")"
         git clone https://github.com/robertjarske/wallpapers "$wallpapers_dir" \
-          || { echo "wallpaper-change: clone failed, using fallback"; exit 0; }
+          || { echo "wallpaper-change: clone failed"; exit 0; }
       else
         git -C "$wallpapers_dir" pull --ff-only 2>/dev/null || true
       fi
 
-      wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
+      history_file="$HOME/.config/hypr/wallpaper_history"
+      all=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \))
+      total=$(echo "$all" | wc -l)
 
-      # No wallpapers found even after clone attempt — exit cleanly.
-      [ -n "$wallpaper" ] || exit 0
-
-      # Track previous wallpaper so we can unload it after switching.
-      # Avoids "hyprpaper unload all" which errors in newer hyprpaper when
-      # there are no unused wallpapers to unload (set -e would abort the script).
-      prev_state="/tmp/wallpaper-prev"
-      prev_wallpaper=""
-      [ -f "$prev_state" ] && prev_wallpaper=$(cat "$prev_state")
-
-      hyprctl hyprpaper preload "$wallpaper" || true
-      while IFS= read -r monitor; do
-        hyprctl hyprpaper wallpaper "$monitor,$wallpaper"
-      done < <(hyprctl monitors -j | jq -r '.[].name')
-
-      # Persist current path so the next run can unload it.
-      printf '%s' "$wallpaper" > "$prev_state"
-
-      # Unload the previous wallpaper now that no monitor is displaying it.
-      if [ -n "$prev_wallpaper" ] && [ "$prev_wallpaper" != "$wallpaper" ]; then
-        hyprctl hyprpaper unload "$prev_wallpaper" || true
+      # Exclude the last third of the collection from the candidate pool so
+      # recently shown wallpapers are skipped. Fall back to the full list if
+      # everything has been excluded (e.g. tiny collection).
+      exclude=$((total / 3))
+      candidates="$all"
+      if [ "$exclude" -gt 0 ] && [ -f "$history_file" ]; then
+        filtered=$(echo "$all" | grep -vxF "$(tail -n "$exclude" "$history_file")" || true)
+        [ -n "$filtered" ] && candidates="$filtered"
       fi
 
-      # Rofi inputbar background
-      ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
+      wallpaper=$(echo "$candidates" | shuf -n1)
+      [ -n "$wallpaper" ] || exit 0
 
+      # Append to history and keep it bounded to the collection size.
+      echo "$wallpaper" >> "$history_file"
+      tmp=$(mktemp)
+      tail -n "$total" "$history_file" > "$tmp" && mv "$tmp" "$history_file"
+
+      # Persist so wallpaper-restore can reapply on next login.
+      current_file="$HOME/.config/hypr/current_wallpaper"
+      mkdir -p "$(dirname "$current_file")"
+      printf '%s' "$wallpaper" > "$current_file"
+
+      swww img "$wallpaper" --transition-type fade --transition-duration 1
+      ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
       matugen image "$wallpaper"
+      matugen --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
       pkill -USR1 kitty || true
       hyprpanel useTheme "$HOME/.config/ags/hyprpanel-matugen-theme.json" || true
     '';
   };
 in {
   home = {
-    packages = [wallpaper-change wallpaper-monitor-listener];
+    packages = [wallpaper-change wallpaper-restore wallpaper-monitor-listener];
     activation = {
       # Catppuccin Mocha fallback so `source` doesn't error on first boot before
       # matugen has run. Only the variables actually used in the config are needed.
@@ -125,25 +160,6 @@ in {
             || echo "wallpaper-sync: initial clone failed (offline?), hyprpaper fallback will be used until next rebuild with network"
         fi
       '';
-    };
-  };
-
-  # Managed as a systemd user service so nixos-rebuild switch restarts it
-  # cleanly instead of killing the process and leaving no wallpaper.
-  # Initial wallpaper is a nix-store solid-color image (always available).
-  # wallpaper-change replaces it with a real image from ~/Pictures/wallpapers
-  # 2 seconds after login (exec-once below).
-  services.hyprpaper = {
-    enable = true;
-    # Match the unstable Hyprland version to avoid IPC protocol mismatches.
-    # Stable hyprpaper uses an older wire protocol that newer hyprctl rejects
-    # with "invalid message recvd (invalid type code)".
-    package = unstable.hyprpaper;
-    settings = {
-      splash = false;
-      ipc = true;
-      preload = ["${fallbackWallpaper}"];
-      wallpaper = [",${fallbackWallpaper}"];
     };
   };
 
@@ -249,6 +265,10 @@ in {
         disable_hyprland_logo = true;
       };
 
+      # Blur rofi's transparent overlay so the blurred desktop shows through.
+      # Hyprland 0.53+ syntax: "rule on, match:namespace <name>"
+      layerrule = ["blur on, match:namespace rofi"];
+
       env = [
         "GTK_THEME,catppuccin-mocha-mauve-standard:dark"
 
@@ -337,6 +357,9 @@ in {
 
         # Clipboard history picker
         "$mod SHIFT, V, exec, cliphist list | rofi -dmenu | cliphist decode | wl-copy"
+
+        # Keybinding reference popup (slash = Shift+7 on Swedish layout, conflicts with workspace move)
+        "$mod, F1, exec, wlr-which-key"
       ];
 
       bindm = [
@@ -373,9 +396,10 @@ in {
         "swaync"
         "wl-paste --type text --watch cliphist store"
         "wl-paste --type image --watch cliphist store"
-        # Apply random wallpaper and generate Material You colors on login.
-        # Small delay ensures hyprpaper is ready to accept IPC commands.
-        "bash -c 'sleep 2 && wallpaper-change'"
+        # Start swww daemon, immediately show fallback color, then fade in the real wallpaper.
+        # swww img waits for the daemon internally so the two commands can run concurrently.
+        "swww-daemon"
+        "bash -c 'swww img ${fallbackWallpaper} && wallpaper-restore'"
         # Re-apply wallpaper to any monitor added after login (e.g. dock).
         "wallpaper-monitor-listener"
       ];

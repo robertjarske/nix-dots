@@ -29,7 +29,7 @@ in {
     configFile."rofi/master-config.rasi".text = ''
       /*****----- Configuration -----*****/
       configuration {
-          font:                 "Fira Code SemiBold 8";
+          font:                 "Fira Code SemiBold 10";
           modi:                 "drun,run,filebrowser,window";
           show-icons:           true;
           display-drun:         " Apps";
@@ -53,7 +53,7 @@ in {
           handle-colour:               var(selected);
           background-colour:           var(background);
           foreground-colour:           var(foreground);
-          alternate-background:        var(background-alt);
+          alternate-background:        var(background);
           normal-background:           var(background);
           normal-foreground:           var(foreground);
           urgent-background:           var(urgent);
@@ -75,11 +75,11 @@ in {
 
           /* Layout sizing — override per-resolution in config.rasi */
           screen-margin:   150px 250px;
-          box-spacing:     15px;
-          list-padding:    8px;
-          element-padding: 12px;
-          element-radius:  8px;
-          element-spacing: 12px;
+          box-spacing:     12px;
+          list-padding:    10px;
+          element-padding: 14px;
+          element-radius:  10px;
+          element-spacing: 10px;
       }
 
       /*****----- Main Window -----*****/
@@ -93,7 +93,7 @@ in {
           border-radius:    0px;
           border-color:     var(border-colour);
           cursor:           "default";
-          background-color: rgba(0,0,0,0.5);
+          background-color: rgba(0,0,0,0);
       }
 
       /*****----- Main Box -----*****/
@@ -103,7 +103,7 @@ in {
           margin:           var(screen-margin);
           padding:          var(box-spacing);
           border:           2px solid;
-          border-radius:    12px;
+          border-radius:    16px;
           border-color:     var(border-colour);
           background-color: var(background-colour);
           children:         [ "inputbar", "message", "listview" ];
@@ -264,7 +264,7 @@ in {
       element-icon {
           background-color: transparent;
           text-color:       inherit;
-          size:             32px;
+          size:             36px;
           cursor:           inherit;
       }
       element-text {
@@ -310,9 +310,9 @@ in {
     configFile."rofi/config.rasi".text = ''
       @import "~/.config/rofi/master-config.rasi"
 
-      /* Tighter margins on 1440p — keeps the panel as a focused strip */
+      /* Wider panel on 1440p — 500px horizontal margin leaves more breathing room */
       mainbox {
-          margin: 200px 750px;
+          margin: 200px 500px;
       }
     '';
   };

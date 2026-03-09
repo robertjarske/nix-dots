@@ -15,6 +15,7 @@
     (vivaldi.override {commandLineArgs = "--password-store=gnome-libsecret";})
     spotify
     nautilus
+    file-roller # right-click extract in Nautilus
     udiskie
     openssl
   ];
