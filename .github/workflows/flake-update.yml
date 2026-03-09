@@ -24,5 +24,7 @@ jobs:
             Automated weekly update of flake inputs via `nix flake update`.
 
             The CI check will build both hosts and show an nvd diff of what changed.
+
+            [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           branch: deps/flake-update
           delete-branch: true
