@@ -3,6 +3,7 @@
   lib,
   config,
   vscodeExtensions,
+  vscodeLatest,
   ...
 }: let
   mkt = vscodeExtensions.vscode-marketplace;
@@ -26,6 +27,7 @@ in {
 
   programs.vscode = {
     enable = true;
+    package = vscodeLatest;
     mutableExtensionsDir = true;
 
     profiles.default = {
