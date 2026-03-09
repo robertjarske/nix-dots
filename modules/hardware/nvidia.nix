@@ -6,6 +6,10 @@ _: {
     nvidiaSettings = true;
   };
 
+  # Poll for DRM connector state changes so Thunderbolt-tunneled DisplayPort
+  # monitors are detected even when the hotplug interrupt is missed at boot.
+  boot.kernelParams = ["nvidia-drm.poll=1"];
+
   services.xserver.videoDrivers = ["nvidia"];
 
   environment.sessionVariables = {
