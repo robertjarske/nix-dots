@@ -62,6 +62,7 @@
     };
 
     neovimNightly = neovim-nightly-overlay.packages.${system}.default;
+    vscodeLatest = pkgs.callPackage ./pkgs/vscode-latest.nix {inherit unstable;};
 
     # Apply overlay + allowUnfree on the same pkgs instance (required for unfree extensions).
     vscodeExtensions =
@@ -114,7 +115,7 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              extraSpecialArgs = {inherit hyprpanel vscodeExtensions unstable;};
+              extraSpecialArgs = {inherit hyprpanel vscodeExtensions unstable vscodeLatest;};
               users.${username} = homeModule;
             };
           }
