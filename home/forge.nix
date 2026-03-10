@@ -1,4 +1,41 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  # Rearranges Hyprland workspaces to match the active kanshi monitor profile.
+  # Called from kanshi exec after each profile switch.
+  hypr-workspace-layout = pkgs.writeShellScript "hypr-workspace-layout" ''
+    # Bind workspace to monitor (persistent rule) AND move it if it already exists.
+    # The keyword sets where Hyprland creates the workspace; moveworkspacetomonitor
+    # relocates any existing instance. Both are needed for reliable placement.
+    bind() {
+      local ws="$1" mon="$2"
+      hyprctl keyword workspace "$ws, monitor:$mon" >/dev/null 2>&1
+      hyprctl dispatch moveworkspacetomonitor "$ws" "$mon" >/dev/null 2>&1
+    }
+    # Give Hyprland a moment to finish processing the new output layout.
+    sleep 0.5
+
+    case "$1" in
+      work)
+        # 4 monitors left→right: eDP-1, DP-6, DP-7, DP-8
+        # eDP-1: ad-hoc (no initial binding)
+        bind 1 DP-6; bind 2 DP-6; bind 3 DP-6; bind 4 DP-6
+        bind 5 DP-7; bind 6 DP-7; bind 7 DP-7; bind 8 DP-7
+        bind 9 DP-8; bind 10 DP-8
+        # Move Teams to workspace 9 (DP-8) if it is already running.
+        hyprctl dispatch movetoworkspacesilent "9,class:^(teams-for-linux)$" >/dev/null 2>&1 || true
+        ;;
+      home)
+        # 3 monitors left→right: eDP-1, DP-5, DP-6
+        bind 9 eDP-1; bind 10 eDP-1
+        bind 1 DP-5; bind 2 DP-5; bind 3 DP-5; bind 4 DP-5
+        bind 5 DP-6; bind 6 DP-6; bind 7 DP-6; bind 8 DP-6
+        ;;
+      laptop)
+        # Single monitor: all workspaces on eDP-1.
+        for ws in 1 2 3 4 5 6 7 8 9 10; do bind "$ws" eDP-1; done
+        ;;
+    esac
+  '';
+in {
   imports = [
     ./common/zsh.nix
     ./common/kitty.nix
@@ -61,26 +98,10 @@
       # Replaces the legacy WLR_NO_HARDWARE_CURSORS env var.
       # 0 = force hardware, 1 = force software, 2 = auto (recommended for NVIDIA)
       cursor.no_hardware_cursors = 2;
-      monitor = [
-        "eDP-1,3200x2000@120,0x0,2"
-        "DP-5,2560x1440@75,1600x0,1"
-        "DP-6,2560x1440@75,4160x0,1"
-      ];
-      # Workspace → monitor assignments matching the 3-monitor layout.
-      # DP-5 (left): 1-4, DP-6 (right): 5-8, eDP-1 (laptop): 9-10
-      workspace = [
-        "1,monitor:DP-5,default:true"
-        "2,monitor:DP-5"
-        "3,monitor:DP-5"
-        "4,monitor:DP-5"
-        "5,monitor:DP-6,default:true"
-        "6,monitor:DP-6"
-        "7,monitor:DP-6"
-        "8,monitor:DP-6"
-        "9,monitor:eDP-1,default:true"
-        "10,monitor:eDP-1"
-      ];
-      # Teams for Linux always opens on workspace 5 (right external monitor)
+      # Monitor layout and workspace placement are managed by kanshi.
+      # The catch-all from hyprland.nix covers any output not matched by a profile.
+
+      # Teams for Linux always opens on workspace 5 (second external monitor)
       # Hyprland 0.53+ requires match:class prefix (old class: syntax removed)
       windowrule = ["workspace 5 silent, match:class ^(teams-for-linux)$"];
 
@@ -90,6 +111,33 @@
       ];
     };
   };
+
+  # Kanshi — automatic output profile switching via wlr-output-management.
+  # Port names are used (not descriptions) — wlr-output-management sends
+  # descriptions in a different format than hyprctl reports them.
+  # Each profile's exec rearranges workspaces after the layout is applied.
+  services.kanshi.enable = true;
+  xdg.configFile."kanshi/config".text = ''
+    profile work {
+      output eDP-1 mode 3200x2000@60 position 0,0 scale 1.6
+      output DP-6 mode 2560x1440@59.95 position 2000,0 scale 1.0
+      output DP-7 mode 2560x1440@59.95 position 4560,0 scale 1.0
+      output DP-8 mode 2560x1440@59.95 position 7120,0 scale 1.0
+      exec ${hypr-workspace-layout} work
+    }
+
+    profile home {
+      output eDP-1 mode 3200x2000@120 position 0,0 scale 2.0
+      output DP-5 mode 2560x1440@75 position 1600,0 scale 1.0
+      output DP-6 mode 2560x1440@75 position 4160,0 scale 1.0
+      exec ${hypr-workspace-layout} home
+    }
+
+    profile laptop {
+      output eDP-1 mode 3200x2000@120 position 0,0 scale 2.0
+      exec ${hypr-workspace-layout} laptop
+    }
+  '';
 
   # Azure Data Studio (VS Code-based) reads argv.json before starting.
   # Same gnome-libsecret fix as VS Code.
