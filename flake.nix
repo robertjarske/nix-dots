@@ -96,11 +96,13 @@
           ./modules/core/users.nix
           ./modules/core/snapper.nix
           ./modules/dev/docker.nix
+          ./modules/dev/go.nix
           ./modules/dev/node.nix
           ./modules/dev/editors.nix
           ./modules/hardware/intel.nix
           ./modules/compat/nix-ld.nix
           ./modules/compat/distrobox.nix
+          ./modules/compat/virt.nix
           ./modules/security/yubikey.nix
           ./modules/security/agenix.nix
           ./modules/network/wifi.nix

@@ -1,22 +1,48 @@
-{pkgs, ...}: let
+{
+  pkgs,
+  unstable,
+  ...
+}: let
   # Rearranges Hyprland workspaces to match the active kanshi monitor profile.
   # Called from kanshi exec after each profile switch.
   hypr-workspace-layout = pkgs.writeShellScript "hypr-workspace-layout" ''
-    # Bind workspace to monitor (persistent rule) AND move it if it already exists.
-    # The keyword sets where Hyprland creates the workspace; moveworkspacetomonitor
-    # relocates any existing instance. Both are needed for reliable placement.
+    # Debounce: kanshi fires this exec once per monitor that appears during dock
+    # enumeration (e.g. DP-5 appears → "no profile matched", DP-6 appears → "home"
+    # matched). Only the last invocation in a burst should run; earlier ones bail out.
+    # Token is this process's PID; any newer invocation overwrites it.
+    token_file="/tmp/hypr-workspace-layout-token"
+    echo "$$" > "$token_file"
+    sleep 2
+    [ "$(cat "$token_file" 2>/dev/null)" = "$$" ] || exit 0
+
+    # Set the default-monitor rule AND move any already-created workspace.
     bind() {
       local ws="$1" mon="$2"
       hyprctl keyword workspace "$ws, monitor:$mon" >/dev/null 2>&1
       hyprctl dispatch moveworkspacetomonitor "$ws" "$mon" >/dev/null 2>&1
     }
-    # Give Hyprland a moment to finish processing the new output layout.
-    sleep 0.5
+
+    # Poll until a monitor is listed in hyprctl output (up to 10 s).
+    # Needed because kanshi fires the exec right after sending the wlr-output-management
+    # commands, but NVIDIA may need extra time to light up Thunderbolt-tunneled DP outputs.
+    wait_for_monitor() {
+      local mon="$1"
+      for i in $(seq 1 20); do
+        hyprctl monitors | grep -q "^Monitor $mon " && return 0
+        sleep 0.5
+      done
+      echo "hypr-workspace-layout: timed out waiting for $mon" >&2
+      return 1
+    }
 
     case "$1" in
       work)
         # 4 monitors left→right: eDP-1, DP-6, DP-7, DP-8
-        # eDP-1: ad-hoc (no initial binding)
+        wait_for_monitor DP-6 && wait_for_monitor DP-7 && wait_for_monitor DP-8 || exit 1
+        # Force DPMS on in case NVIDIA missed the hotplug signal at boot.
+        hyprctl dispatch dpms on DP-6 >/dev/null 2>&1
+        hyprctl dispatch dpms on DP-7 >/dev/null 2>&1
+        hyprctl dispatch dpms on DP-8 >/dev/null 2>&1
         bind 1 DP-6; bind 2 DP-6; bind 3 DP-6; bind 4 DP-6
         bind 5 DP-7; bind 6 DP-7; bind 7 DP-7; bind 8 DP-7
         bind 9 DP-8; bind 10 DP-8
@@ -25,6 +51,9 @@
         ;;
       home)
         # 3 monitors left→right: eDP-1, DP-5, DP-6
+        wait_for_monitor DP-5 && wait_for_monitor DP-6 || exit 1
+        hyprctl dispatch dpms on DP-5 >/dev/null 2>&1
+        hyprctl dispatch dpms on DP-6 >/dev/null 2>&1
         bind 9 eDP-1; bind 10 eDP-1
         bind 1 DP-5; bind 2 DP-5; bind 3 DP-5; bind 4 DP-5
         bind 5 DP-6; bind 6 DP-6; bind 7 DP-6; bind 8 DP-6
@@ -103,11 +132,14 @@ in {
 
       # Teams for Linux always opens on workspace 5 (second external monitor)
       # Hyprland 0.53+ requires match:class prefix (old class: syntax removed)
-      windowrule = ["workspace 5 silent, match:class ^(teams-for-linux)$"];
+      windowrule = [
+        "workspace 5 silent, match:class ^(teams-for-linux)$"
+        "workspace 6 silent, match:class ^(vivaldi-stable)$"
+      ];
 
       exec-once = [
-        "[workspace 6 silent] vivaldi"
-        "[workspace 5 silent] teams-for-linux"
+        "vivaldi"
+        "teams-for-linux"
       ];
     };
   };
@@ -145,6 +177,10 @@ in {
     text = builtins.toJSON {"password-store" = "gnome-libsecret";};
     force = true;
   };
+
+  home.packages = [
+    unstable.onlyoffice-desktopeditors
+  ];
 
   home.stateVersion = "25.11";
 }

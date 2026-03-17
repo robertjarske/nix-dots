@@ -4,6 +4,7 @@ _: {
     enable32Bit = true;
   };
 
+  boot.initrd.kernelModules = ["i915"];
   boot.kernelModules = ["i915"];
 
   environment.sessionVariables = {
