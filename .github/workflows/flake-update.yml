@@ -18,6 +18,7 @@ jobs:
         run: nix flake update
       - uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ secrets.PAT }}
           commit-message: "chore: update flake.lock"
           title: "chore: update flake inputs"
           body: |
