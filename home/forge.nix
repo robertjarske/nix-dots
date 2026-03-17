@@ -173,14 +173,16 @@ in {
 
   # Azure Data Studio (VS Code-based) reads argv.json before starting.
   # Same gnome-libsecret fix as VS Code.
-  home.file.".config/azuredatastudio/argv.json" = {
-    text = builtins.toJSON {"password-store" = "gnome-libsecret";};
-    force = true;
+  home = {
+    file.".config/azuredatastudio/argv.json" = {
+      text = builtins.toJSON {"password-store" = "gnome-libsecret";};
+      force = true;
+    };
+
+    packages = [
+      unstable.onlyoffice-desktopeditors
+    ];
+
+    stateVersion = "25.11";
   };
-
-  home.packages = [
-    unstable.onlyoffice-desktopeditors
-  ];
-
-  home.stateVersion = "25.11";
 }
