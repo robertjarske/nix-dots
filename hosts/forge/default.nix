@@ -43,6 +43,24 @@
 
   hardware.nvidia-container-toolkit.enable = true;
 
+  hardware.ipu6 = {
+    enable = true;
+    platform = "ipu6epmtl"; # Meteor Lake (Intel Core Ultra 7 155H)
+  };
+
+  # nixpkgs bug: gst_all_1.icamerasrc-ipu6epmtl does not override ipu6-camera-hal
+  # to the platform-specific variant, so it silently uses the Tiger Lake HAL and
+  # produces a black image. Override it here to use the correct Meteor Lake HAL.
+  nixpkgs.overlays = [
+    (final: prev: {
+      gst_all_1 = prev.gst_all_1.overrideScope (_: gprev: {
+        icamerasrc-ipu6epmtl = gprev.icamerasrc-ipu6epmtl.override {
+          ipu6-camera-hal = final.ipu6epmtl-camera-hal;
+        };
+      });
+    })
+  ];
+
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
 
   system.activationScripts = {

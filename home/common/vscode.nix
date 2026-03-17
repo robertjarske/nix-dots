@@ -212,6 +212,7 @@ in {
           "https://ui.shadcn.com/schema.json" = true;
           "https://turbo.build" = true;
           "https://docs.renovatebot.com" = true;
+          "https://v2-8-16.turborepo.dev" = true;
         };
 
         "[nix]" = {
