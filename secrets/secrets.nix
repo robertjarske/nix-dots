@@ -20,6 +20,7 @@ in {
 
   "work-docker-registries.age".publicKeys = masters ++ [forge];
 
+  "work-local-hosts.age".publicKeys = masters ++ [forge];
   "work-dns-domains.age".publicKeys = masters ++ [forge];
   "dns-development.age".publicKeys = masters ++ [forge];
   "dns-production.age".publicKeys = masters ++ [forge];

@@ -11,6 +11,7 @@
   '';
 
   age.secrets = {
+    work-local-hosts.file = ../../secrets/work-local-hosts.age;
     work-dns-domains.file = ../../secrets/work-dns-domains.age;
     dns-development.file = ../../secrets/dns-development.age;
     dns-production.file = ../../secrets/dns-production.age;
@@ -20,6 +21,8 @@
     deps = ["agenix"];
     text = ''
       mkdir -p /etc/NetworkManager/dnsmasq.d
+      install -m 0644 -o root -g root ${config.age.secrets.work-local-hosts.path} \
+        /etc/NetworkManager/dnsmasq.d/00-local-hosts.conf
       install -m 0644 -o root -g root ${config.age.secrets.work-dns-domains.path} \
         /etc/NetworkManager/dnsmasq.d/01-work-domains.conf
       install -m 0644 -o root -g root ${config.age.secrets.dns-development.path} \

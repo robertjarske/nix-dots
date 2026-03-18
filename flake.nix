@@ -181,39 +181,6 @@
           echo "✅ Done."
         '');
       };
-
-      # Decrypt the work AD SSH private key and place it at ~/.ssh/work_ad,
-      # then derive the public key from it. Run once after setting up forge,
-      # or any time the secret is rekeyed.
-      # Usage: nix run .#deploy-work-ssh
-      deploy-work-ssh = {
-        type = "app";
-        meta.description = "Decrypt and deploy work AD SSH key + derive public key";
-        program = toString (pkgs.writeShellScript "deploy-work-ssh" ''
-          set -euo pipefail
-          REPO_ROOT="$(${pkgs.git}/bin/git rev-parse --show-toplevel)"
-          TMPFILE=$(mktemp)
-          trap "rm -f $TMPFILE" EXIT
-
-          echo "🔑 Generating YubiKey identity — plug in YubiKey if not already..."
-          ${pkgs.age-plugin-yubikey}/bin/age-plugin-yubikey --identity > "$TMPFILE"
-
-          TARGET="$HOME/.ssh/work_ad"
-          mkdir -p "$HOME/.ssh"
-          chmod 700 "$HOME/.ssh"
-
-          echo "🔓 Decrypting work-ssh-ad.age..."
-          ${pkgs.age}/bin/age --decrypt --identity "$TMPFILE" \
-            "$REPO_ROOT/secrets/work-ssh-ad.age" > "$TARGET"
-          chmod 600 "$TARGET"
-
-          ${pkgs.openssh}/bin/ssh-keygen -y -f "$TARGET" > "$TARGET.pub"
-          chmod 644 "$TARGET.pub"
-
-          echo "✅ Deployed $TARGET"
-          echo "   Public key: $(cat "$TARGET.pub")"
-        '');
-      };
     };
 
     nixosConfigurations = {

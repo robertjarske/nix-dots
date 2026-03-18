@@ -23,14 +23,6 @@
     ../../modules/dev/python.nix
   ];
 
-  networking.hosts = {
-    "127.0.0.1" = [
-      "local.work.internal"
-      "core.local.work.internal"
-      "traefik.local.work.internal"
-    ];
-  };
-
   host = {
     hibernation.resumeOffset = 533760;
     secureboot.enable = true;
@@ -63,7 +55,29 @@
 
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
 
+  age.secrets.work-ssh-ad = {
+    file = ../../secrets/work-ssh-ad.age;
+    owner = "serobja";
+    mode = "0600";
+  };
+
   system.activationScripts = {
+    work-ssh-ad-setup = {
+      deps = ["agenix"];
+      text = ''
+        mkdir -p /home/serobja/.ssh
+        chmod 700 /home/serobja/.ssh
+        chown serobja:users /home/serobja/.ssh
+
+        ln -sf ${config.age.secrets.work-ssh-ad.path} /home/serobja/.ssh/work_ad
+
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE38se/HhwAJy+zu1D9qnUg2SU9yY5n/3rn6WM7H5sAs work-ad" \
+          > /home/serobja/.ssh/work_ad.pub
+        chmod 644 /home/serobja/.ssh/work_ad.pub
+        chown serobja:users /home/serobja/.ssh/work_ad.pub
+      '';
+    };
+
     nm-work-wifi-setup = {
       deps = ["agenix"];
       text = ''

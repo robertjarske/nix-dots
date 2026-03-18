@@ -28,8 +28,6 @@ nix run .#edit-secret -- secrets/<name>.age
 # Rekey all secrets (after adding a new host or key)
 nix run .#rekey
 
-# Deploy work SSH key (forge only)
-nix run .#deploy-work-ssh
 ```
 
 ## Architecture
