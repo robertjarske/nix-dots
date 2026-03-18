@@ -151,46 +151,50 @@
 
   nixSettingsFile = pkgs.writeText "vscode-settings.json" (builtins.toJSON nixSettings);
 in {
-  home.packages = [pkgs.alejandra];
+  home = {
+    packages = [pkgs.alejandra];
 
-  # Merge Nix-defined settings into a mutable settings.json so VS Code can
-  # write to it (trusted binaries, UI state, etc.) without EROFS errors.
-  # Strategy: existing file wins for keys not in nixSettings; nixSettings wins
-  # for keys it defines (.[0] * .[1] with Nix as .[1]).
-  # On first run or if a symlink exists, the file is seeded from nixSettings.
-  home.activation.vsCodeMutableSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    settings="$HOME/.config/Code/User/settings.json"
-    mkdir -p "$(dirname "$settings")"
-    if [ -L "$settings" ]; then
-      # Home-manager left a symlink — replace with a mutable copy
-      rm "$settings"
-      cp "${nixSettingsFile}" "$settings"
-      chmod 644 "$settings"
-    elif [ -f "$settings" ]; then
-      # Merge: existing keys preserved, Nix keys take precedence
-      tmp=$(mktemp)
-      ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$settings" "${nixSettingsFile}" > "$tmp" \
-        && mv "$tmp" "$settings"
-    else
-      cp "${nixSettingsFile}" "$settings"
-      chmod 644 "$settings"
-    fi
-  '';
+    activation = {
+      # Merge Nix-defined settings into a mutable settings.json so VS Code can
+      # write to it (trusted binaries, UI state, etc.) without EROFS errors.
+      # Strategy: existing file wins for keys not in nixSettings; nixSettings wins
+      # for keys it defines (.[0] * .[1] with Nix as .[1]).
+      # On first run or if a symlink exists, the file is seeded from nixSettings.
+      vsCodeMutableSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        settings="$HOME/.config/Code/User/settings.json"
+        mkdir -p "$(dirname "$settings")"
+        if [ -L "$settings" ]; then
+          # Home-manager left a symlink — replace with a mutable copy
+          rm "$settings"
+          cp "${nixSettingsFile}" "$settings"
+          chmod 644 "$settings"
+        elif [ -f "$settings" ]; then
+          # Merge: existing keys preserved, Nix keys take precedence
+          tmp=$(mktemp)
+          ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$settings" "${nixSettingsFile}" > "$tmp" \
+            && mv "$tmp" "$settings"
+        else
+          cp "${nixSettingsFile}" "$settings"
+          chmod 644 "$settings"
+        fi
+      '';
 
-  # Patch argv.json in-place so VS Code keeps its crash-reporter-id and any
-  # other settings it manages. Runs after writeBoundary so the home dir exists.
-  # If the file doesn't exist yet, create it with minimal content.
-  home.activation.vsCodeArgvPasswordStore = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    argv_json="$HOME/.vscode/argv.json"
-    mkdir -p "$(dirname "$argv_json")"
-    if [ -f "$argv_json" ] && [ ! -L "$argv_json" ]; then
-      tmp=$(mktemp)
-      ${pkgs.jq}/bin/jq '.["password-store"] = "gnome-libsecret"' "$argv_json" > "$tmp" \
-        && mv "$tmp" "$argv_json"
-    elif [ ! -e "$argv_json" ]; then
-      printf '{"password-store":"gnome-libsecret"}\n' > "$argv_json"
-    fi
-  '';
+      # Patch argv.json in-place so VS Code keeps its crash-reporter-id and any
+      # other settings it manages. Runs after writeBoundary so the home dir exists.
+      # If the file doesn't exist yet, create it with minimal content.
+      vsCodeArgvPasswordStore = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        argv_json="$HOME/.vscode/argv.json"
+        mkdir -p "$(dirname "$argv_json")"
+        if [ -f "$argv_json" ] && [ ! -L "$argv_json" ]; then
+          tmp=$(mktemp)
+          ${pkgs.jq}/bin/jq '.["password-store"] = "gnome-libsecret"' "$argv_json" > "$tmp" \
+            && mv "$tmp" "$argv_json"
+        elif [ ! -e "$argv_json" ]; then
+          printf '{"password-store":"gnome-libsecret"}\n' > "$argv_json"
+        fi
+      '';
+    };
+  };
 
   programs.vscode = {
     enable = true;
