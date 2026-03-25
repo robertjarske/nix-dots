@@ -1,18 +1,20 @@
 {pkgs, ...}: {
-  services.pcscd.enable = true;
+  services = {
+    pcscd.enable = true;
+    udev = {
+      packages = [pkgs.yubikey-personalization];
+      # Re-trigger gpg-card-learn in the user session whenever a YubiKey is plugged in.
+      # Covers both initial login (handled by the user service) and hot-swap between keys.
+      extraRules = ''
+        ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1050", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="gpg-card-learn.service"
+      '';
+    };
+  };
 
   programs.gnupg.agent = {
     enable = true;
     pinentryPackage = pkgs.pinentry-qt;
   };
-
-  services.udev.packages = [pkgs.yubikey-personalization];
-
-  # Re-trigger gpg-card-learn in the user session whenever a YubiKey is plugged in.
-  # Covers both initial login (handled by the user service) and hot-swap between keys.
-  services.udev.extraRules = ''
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="1050", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="gpg-card-learn.service"
-  '';
 
   environment.systemPackages = with pkgs; [
     yubikey-personalization
