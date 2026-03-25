@@ -27,8 +27,10 @@
     "eDP-1,3840x2400@60,0x0,1.6"
   ];
 
-  # Identity loaded from a locally-managed file, not tracked in this repo.
-  # On first setup: printf '[user]\n  name = ...\n  email = ...\n' > ~/.config/git/local-identity
+  # Identity + signing key loaded from a locally-managed file, not tracked in this repo.
+  # On first setup:
+  #   printf '[user]\n  name = ...\n  email = ...\n  signingKey = YOUR_GPG_KEY_ID\n' \
+  #     > ~/.config/git/local-identity
   programs.git.includes = [
     {path = "~/.config/git/local-identity";}
   ];

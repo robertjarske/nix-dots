@@ -100,16 +100,22 @@ in {
       core = "cd ~/code/core";
       common = "cd ~/code/common";
       socket-server = "cd ~/code/socket-server";
+      sniffer = "cd ~/code/phpcs-community/vscode-php-sniffer";
       buildserver = "s buildserver";
       docker-server = "s docker-server";
       docker-server2 = "s docker-server2";
       docker-server3 = "s docker-server3";
       prod = "s prod";
       gitlab = "s gitlab";
+
+      # Playwright — enter dev shell with NixOS-compatible browsers
+      pw = "nix develop ~/code/nix-dots#playwright";
     };
 
-    # Identity (name + work email) loaded from a locally-managed file, not tracked in this repo.
-    # On first setup: printf '[user]\n  name = ...\n  email = ...\n' > ~/.config/git/local-identity
+    # Identity + signing key loaded from a locally-managed file, not tracked in this repo.
+    # On first setup:
+    #   printf '[user]\n  name = ...\n  email = ...\n  signingKey = YOUR_GPG_KEY_ID\n' \
+    #     > ~/.config/git/local-identity
     git.includes = [
       {path = "~/.config/git/local-identity";}
     ];
@@ -117,7 +123,6 @@ in {
 
   wayland.windowManager.hyprland = {
     extraConfig = ''
-      env = LIBVA_DRIVER_NAME,nvidia
       env = GBM_BACKEND,nvidia-drm
       env = __GLX_VENDOR_LIBRARY_NAME,nvidia
       env = NVD_BACKEND,direct
