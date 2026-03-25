@@ -1,6 +1,6 @@
-{pkgs, ...}: {
-  environment.systemPackages = with pkgs; [
-    php
-    phpPackages.composer
+{unstable, ...}: {
+  environment.systemPackages = [
+    unstable.php85
+    unstable.php85Packages.composer
   ];
 }

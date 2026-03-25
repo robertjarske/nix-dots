@@ -21,6 +21,7 @@
     ../../modules/work/apps.nix
     ../../modules/dev/php.nix
     ../../modules/dev/python.nix
+    ../../modules/dev/devenv.nix
   ];
 
   host = {

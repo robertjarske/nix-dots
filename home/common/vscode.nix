@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  config,
   vscodeExtensions,
   vscodeLatest,
   ...
@@ -31,9 +30,6 @@
     "files.trimTrailingWhitespace" = true;
 
     "doctypes.descriptionWrap" = 115;
-
-    # phpSniffer uses composer-installed binaries in the user's local dir
-    "phpSniffer.executablesFolder" = "${config.home.homeDirectory}/.config/composer/vendor/bin";
 
     "css.validate" = false;
     "less.validate" = false;
@@ -79,6 +75,10 @@
       "https://turbo.build" = true;
       "https://docs.renovatebot.com" = true;
       "https://v2-8-16.turborepo.dev" = true;
+      "https://developer.microsoft.com/json-schemas/" = true;
+      "https://esm.sh" = true;
+      "https://raw.githubusercontent.com/devcontainers/spec/" = true;
+      "https://raw.githubusercontent.com/microsoft/vscode/" = true;
     };
 
     "[nix]" = {
@@ -119,9 +119,15 @@
       "editor.suggest.insertMode" = "replace";
       "editor.defaultFormatter" = "esbenp.prettier-vscode";
     };
+    # phpstan: vendor/bin/phpstan and phpstan.neon are auto-detected
+    "phpstan.memoryLimit" = "1G";
+    "phpstan.showProgress" = true;
+    "phpstan.enableStatusBar" = true;
+
     "[php]" = {
       "editor.linkedEditing" = true;
       "editor.tabSize" = 4;
+      "editor.formatOnSave" = true;
     };
     "[css]" = {
       "editor.formatOnSave" = true;
@@ -134,8 +140,12 @@
       "editor.tabSize" = 2;
       "editor.codeActionsOnSave" = {"source.fixAll.stylelint" = "explicit";};
     };
-    "[yaml]" = {"editor.defaultFormatter" = "redhat.vscode-yaml";};
-    "[github-actions-workflow]" = {"editor.defaultFormatter" = "redhat.vscode-yaml";};
+    "[yaml]" = {
+      "editor.defaultFormatter" = "redhat.vscode-yaml";
+    };
+    "[github-actions-workflow]" = {
+      "editor.defaultFormatter" = "redhat.vscode-yaml";
+    };
     "[dockercompose]" = {
       "editor.insertSpaces" = true;
       "editor.tabSize" = 2;
@@ -150,6 +160,30 @@
   };
 
   nixSettingsFile = pkgs.writeText "vscode-settings.json" (builtins.toJSON nixSettings);
+
+  # Merges existing JSONC settings.json with Nix-defined settings.
+  # Uses Python to handle VS Code's JSONC (trailing commas, comments).
+  mergeVscodeSettings = pkgs.writeScript "merge-vscode-settings.py" ''
+    import json, re, sys  # re used for trailing-comma stripping
+
+    def load_jsonc(path):
+        data = open(path).read()
+        data = re.sub(r",(\s*[}\]])", r"\1", data)
+        return json.loads(data, strict=False)
+
+    def deep_merge(a, b):
+        result = dict(a)
+        for k, v in b.items():
+            if k in result and isinstance(result[k], dict) and isinstance(v, dict):
+                result[k] = deep_merge(result[k], v)
+            else:
+                result[k] = v
+        return result
+
+    existing = load_jsonc(sys.argv[1])
+    nix      = load_jsonc(sys.argv[2])
+    print(json.dumps(deep_merge(existing, nix), indent=2))
+  '';
 in {
   home = {
     packages = [pkgs.alejandra];
@@ -169,9 +203,10 @@ in {
           cp "${nixSettingsFile}" "$settings"
           chmod 644 "$settings"
         elif [ -f "$settings" ]; then
-          # Merge: existing keys preserved, Nix keys take precedence
+          # Merge: existing keys preserved, Nix keys take precedence.
+          # Use Python to handle JSONC (trailing commas) that VS Code writes.
           tmp=$(mktemp)
-          ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$settings" "${nixSettingsFile}" > "$tmp" \
+          ${pkgs.python3}/bin/python3 ${mergeVscodeSettings} "$settings" "${nixSettingsFile}" > "$tmp" \
             && mv "$tmp" "$settings"
         else
           cp "${nixSettingsFile}" "$settings"
@@ -227,8 +262,7 @@ in {
 
         # --- PHP ---
         mkt.bmewburn.vscode-intelephense-client
-        mkt.wongjn.php-sniffer
-        mkt.shevaua.phpcs
+        mkt.sanderronde.phpstan-vscode
 
         # --- Python ---
         mkt.ms-python.python

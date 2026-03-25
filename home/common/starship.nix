@@ -22,13 +22,17 @@ _: {
       git_branch = {};
 
       git_status = {
-        ahead = "⇡\${count}";
-        behind = "⇣\${count}";
-        diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
-        modified = "!\${count}";
-        untracked = "?\${count}";
-        staged = "+\${count}";
-        deleted = "✘\${count}";
+        format = "([$all_status$ahead_behind]($style) )";
+        conflicted = "[ \${count} ](bold red)";
+        ahead = "[⇡\${count} ](green)";
+        behind = "[⇣\${count} ](red)";
+        diverged = "[⇕⇡\${ahead_count}⇣\${behind_count} ](bold red)";
+        untracked = "[ \${count} ](dimmed white)";
+        stashed = "[ \${count} ](cyan)";
+        modified = "[ \${count} ](yellow)";
+        staged = "[ \${count} ](green)";
+        renamed = "[» \${count} ](purple)";
+        deleted = "[ \${count} ](red)";
       };
 
       nix_shell = {

@@ -72,6 +72,9 @@
 
       # --- Appearance ---
       background_opacity = "0.9";
+      # Raise dim text opacity so devenv/TUI sub-task lines stay readable.
+      # kitty default is 0.4, which is nearly invisible on dark backgrounds.
+      dim_opacity = "0.75";
       window_padding_width = 8;
       hide_window_decorations = true;
       draw_minimal_borders = true;
@@ -102,7 +105,13 @@
     # Colors are managed by matugen (see home/common/matugen.nix).
     # matugen writes ~/.config/kitty/kitty-colors.conf on each wallpaper change;
     # kitty reloads it live via SIGUSR1 sent by the wallpaper-change script.
-    extraConfig = "include ~/.config/kitty/kitty-colors.conf";
+    extraConfig = ''
+      include ~/.config/kitty/kitty-colors.conf
+      # color8 (bright black) is used by devenv/TUI tools for sub-task text.
+      # matugen can generate it too close to the background, so pin it to a
+      # readable mid-gray regardless of wallpaper.
+      color8 #909090
+    '';
 
     keybindings = {
       # Fix Ctrl+Left/Right word navigation.

@@ -21,6 +21,12 @@
 
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    devenv.url = "github:cachix/devenv";
+
+    # Pinned to playwright-driver 1.58.2.
+    # See https://search.nixos.org/packages?channel=unstable&from=0&size=50&sort=relevance&type=packages&query=playwright
+    nixpkgs-playwright.url = "github:NixOS/nixpkgs/993b198677ac7aea3719d2d2f03ae312ae9ee5ae";
+
     hyprpanel = {
       url = "github:Jas-SinghFSU/HyprPanel";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -45,9 +51,11 @@
   outputs = {
     nixpkgs,
     nixpkgs-unstable,
+    nixpkgs-playwright,
     home-manager,
     disko,
     agenix,
+    devenv,
     hyprpanel,
     nix-vscode-extensions,
     lanzaboote,
@@ -72,6 +80,9 @@
         overlays = [nix-vscode-extensions.overlays.default];
       }).nix-vscode-extensions;
 
+    pkgs-pw = import nixpkgs-playwright {inherit system;};
+    devenvPkg = devenv.packages.${system}.devenv;
+
     mkHost = {
       hostModule,
       homeModule,
@@ -81,7 +92,7 @@
     }:
       nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = {inherit agenix unstable neovimNightly;};
+        specialArgs = {inherit agenix unstable neovimNightly devenvPkg;};
         modules = [
           disko.nixosModules.disko
           home-manager.nixosModules.home-manager
@@ -117,7 +128,7 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              extraSpecialArgs = {inherit hyprpanel vscodeExtensions unstable vscodeLatest;};
+              extraSpecialArgs = {inherit hyprpanel vscodeExtensions unstable vscodeLatest devenvPkg;};
               users.${username} = homeModule;
             };
           }
@@ -125,6 +136,32 @@
       };
   in {
     formatter.${system} = pkgs.alejandra;
+
+    devShells.${system}.playwright = let
+      browsers-json = builtins.fromJSON (builtins.readFile "${pkgs-pw.playwright-driver}/browsers.json");
+      chromium-rev = (builtins.head (builtins.filter (x: x.name == "chromium") browsers-json.browsers)).revision;
+      nixVersion = pkgs-pw.playwright-driver.version;
+    in
+      pkgs-pw.mkShell {
+        packages = [pkgs-pw.playwright-driver.browsers];
+        shellHook = ''
+          export PLAYWRIGHT_BROWSERS_PATH=${pkgs-pw.playwright-driver.browsers}
+          export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+          export PLAYWRIGHT_NODEJS_PATH=${pkgs.nodejs}/bin/node
+          export PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH=${pkgs-pw.playwright-driver.browsers}/chromium-${chromium-rev}/chrome-linux/chrome
+
+          npmVersion=$(npm pkg get devDependencies.@playwright/test 2>/dev/null | tr -d '"' || true)
+          echo "❄️  Playwright nix version: ${nixVersion}"
+          echo "📦 Playwright npm version: ''${npmVersion:-not found in package.json}"
+          if [ "${nixVersion}" != "''${npmVersion}" ]; then
+            echo "❌ Version mismatch — update the pinned nixpkgs-playwright commit or package.json"
+          else
+            echo "✅ Versions match"
+          fi
+          echo
+          env | grep ^PLAYWRIGHT
+        '';
+      };
 
     templates = {
       node = {

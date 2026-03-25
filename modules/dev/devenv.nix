@@ -1,0 +1,3 @@
+{devenvPkg, ...}: {
+  environment.systemPackages = [devenvPkg];
+}
