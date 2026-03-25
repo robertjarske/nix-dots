@@ -18,6 +18,7 @@
     ./common/mpv.nix
     ./common/direnv.nix
     ./common/xdg.nix
+    ./common/yubikey.nix
   ];
 
   # HiDPI laptop screen — 3840x2400 at 1.6 scale (effective 2400x1500).

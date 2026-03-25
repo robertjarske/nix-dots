@@ -85,10 +85,17 @@ in {
     ./common/mpv.nix
     ./common/direnv.nix
     ./common/xdg.nix
+    ./common/yubikey.nix
   ];
 
   programs = {
     # Work SSH hosts live in a locally-managed file, not tracked in git.
+    # On first setup, create ~/.config/ssh/work-hosts with ControlMaster entries
+    # for internal GitLab and any other work hosts, e.g.:
+    #   Host <internal-gitlab-host>
+    #     ControlMaster auto
+    #     ControlPath ~/.ssh/cm-%r@%h:%p
+    #     ControlPersist 10m
     ssh.extraConfig = "Include ~/.config/ssh/work-hosts";
 
     zsh.shellAliases = {

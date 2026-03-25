@@ -117,7 +117,7 @@
         db-rm = "distrobox rm";
 
         # --- YubiKey ---
-        yk-switch = "gpg-connect-agent \"scd serialno\" \"learn --force\" /bye"; # re-associate GPG stubs after swapping YubiKeys
+        yk-switch = "gpg-connect-agent \"SCD KILLSCD\" /bye; sleep 1 && gpg-connect-agent \"scd serialno\" \"learn --force\" /bye"; # re-associate GPG stubs after swapping YubiKeys
         yk-ssh-load = "cd ~/.ssh && ssh-keygen -K"; # export resident SSH keys from plugged-in YubiKey to ~/.ssh/
 
         # --- Nix dev shells ---
