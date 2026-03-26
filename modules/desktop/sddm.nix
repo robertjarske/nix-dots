@@ -11,6 +11,9 @@
   # login so apps never hit a "unable to save token" error.
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.sddm.enableGnomeKeyring = true;
+  # Disable the GCR SSH agent that gnome-keyring enables by default — we use
+  # programs.ssh.startAgent instead (systemd-managed, supports FIDO2 SK keys).
+  services.gnome.gcr-ssh-agent.enable = false;
 
   environment.systemPackages = [pkgs.catppuccin-sddm];
 }

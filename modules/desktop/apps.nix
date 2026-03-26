@@ -17,6 +17,7 @@
     nautilus
     file-roller # right-click extract in Nautilus
     udiskie
+    swayimg # image viewer (loads directory siblings for arrow-key navigation)
     openssl
   ];
 }

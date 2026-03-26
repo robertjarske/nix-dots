@@ -2,7 +2,7 @@
   services = {
     pcscd.enable = true;
     udev = {
-      packages = [pkgs.yubikey-personalization];
+      packages = [pkgs.yubikey-personalization pkgs.libfido2];
       # Re-trigger gpg-card-learn in the user session whenever a YubiKey is plugged in.
       # Covers both initial login (handled by the user service) and hot-swap between keys.
       extraRules = ''
@@ -10,6 +10,11 @@
       '';
     };
   };
+
+  # Systemd-managed SSH agent: started at login via PAM, SSH_AUTH_SOCK is
+  # available to all processes in the session (terminals, GUI apps, VSCode git, etc.)
+  # without any shell integration.
+  programs.ssh.startAgent = true;
 
   programs.gnupg.agent = {
     enable = true;
