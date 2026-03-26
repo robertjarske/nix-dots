@@ -5,17 +5,19 @@
   # expires (enforcing the idle-timeout re-auth behaviour).
   # SSH_ASKPASS_REQUIRE=prefer ensures a single GUI prompt rather than the
   # sk-helper and main ssh process both prompting simultaneously.
-  home.packages = [pkgs.kdePackages.ksshaskpass];
-  home.file.".local/bin/ssh-askpass" = {
-    executable = true;
-    text = ''
-      #!/bin/sh
-      exec ${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass "$@" 2>/dev/null
-    '';
-  };
-  home.sessionVariables = {
-    SSH_ASKPASS = "$HOME/.local/bin/ssh-askpass";
-    SSH_ASKPASS_REQUIRE = "prefer";
+  home = {
+    packages = [pkgs.kdePackages.ksshaskpass];
+    file.".local/bin/ssh-askpass" = {
+      executable = true;
+      text = ''
+        #!/bin/sh
+        exec ${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass "$@" 2>/dev/null
+      '';
+    };
+    sessionVariables = {
+      SSH_ASKPASS = "$HOME/.local/bin/ssh-askpass";
+      SSH_ASKPASS_REQUIRE = "prefer";
+    };
   };
 
   programs.ssh = {
