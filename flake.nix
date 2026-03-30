@@ -21,6 +21,11 @@
 
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    home-manager-unstable = {
+      url = "github:nix-community/home-manager/master";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     devenv.url = "github:cachix/devenv";
 
     # Pinned to playwright-driver 1.58.2.
@@ -53,6 +58,7 @@
     nixpkgs-unstable,
     nixpkgs-playwright,
     home-manager,
+    home-manager-unstable,
     disko,
     agenix,
     devenv,
@@ -89,13 +95,15 @@
       username,
       disk,
       hostname,
+      pkgsSrc ? nixpkgs,
+      hmSrc ? home-manager,
     }:
-      nixpkgs.lib.nixosSystem {
+      pkgsSrc.lib.nixosSystem {
         inherit system;
         specialArgs = {inherit agenix unstable neovimNightly devenvPkg;};
         modules = [
           disko.nixosModules.disko
-          home-manager.nixosModules.home-manager
+          hmSrc.nixosModules.home-manager
           agenix.nixosModules.default
           lanzaboote.nixosModules.lanzaboote
 
@@ -235,6 +243,8 @@
         disk = "/dev/nvme0n1";
         hostModule = ./hosts/forge;
         homeModule = import ./home/forge.nix;
+        pkgsSrc = nixpkgs-unstable;
+        hmSrc = home-manager-unstable;
       };
     };
   };

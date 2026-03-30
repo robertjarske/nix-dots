@@ -29,11 +29,6 @@
     secureboot.enable = true;
   };
 
-  # Stay on LTS until nixpkgs stable ships nvidia 580.126.18+ (fixes kernel 6.19 build).
-  # Track: https://github.com/NixOS/nixpkgs/pull/491462 (merged to master/unstable Feb 2026,
-  # not yet in nixos-25.11). Switch back to linuxPackages_latest once stable is updated.
-  boot.kernelPackages = pkgs.linuxPackages;
-
   hardware.nvidia-container-toolkit.enable = true;
 
   hardware.ipu6 = {
