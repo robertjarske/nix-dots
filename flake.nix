@@ -238,7 +238,7 @@
       };
 
       forge = mkHost {
-        hostname = "forge";
+        hostname = "arch-serobja";
         username = "serobja";
         disk = "/dev/nvme0n1";
         hostModule = ./hosts/forge;
