@@ -52,18 +52,20 @@
     onboardingFile = config.age.secrets.mdatp-onboarding.path;
   };
 
-  age.secrets.mdatp-onboarding = {
-    file = ../../secrets/mdatp-onboarding.age;
-    mode = "0640";
-    group = "mdatp";
-  };
+  age.secrets = {
+    mdatp-onboarding = {
+      file = ../../secrets/mdatp-onboarding.age;
+      mode = "0640";
+      group = "mdatp";
+    };
 
-  age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
+    work-wifi.file = ../../secrets/work-wifi.age;
 
-  age.secrets.work-ssh-ad = {
-    file = ../../secrets/work-ssh-ad.age;
-    owner = "serobja";
-    mode = "0600";
+    work-ssh-ad = {
+      file = ../../secrets/work-ssh-ad.age;
+      owner = "serobja";
+      mode = "0600";
+    };
   };
 
   system.activationScripts = {
