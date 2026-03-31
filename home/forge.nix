@@ -1,6 +1,7 @@
 {
   pkgs,
   unstable,
+  lib,
   ...
 }: let
   # Rearranges Hyprland workspaces to match the active kanshi monitor profile.
@@ -24,7 +25,7 @@
 
     # Poll until a monitor is listed in hyprctl output (up to 10 s).
     # Needed because kanshi fires the exec right after sending the wlr-output-management
-    # commands, but NVIDIA may need extra time to light up Thunderbolt-tunneled DP outputs.
+    # commands, but the GPU may need extra time to light up Thunderbolt-tunneled DP outputs.
     wait_for_monitor() {
       local mon="$1"
       for i in $(seq 1 20); do
@@ -39,7 +40,7 @@
       work)
         # 4 monitors left→right: eDP-1, DP-6, DP-7, DP-8
         wait_for_monitor DP-6 && wait_for_monitor DP-7 && wait_for_monitor DP-8 || exit 1
-        # Force DPMS on in case NVIDIA missed the hotplug signal at boot.
+        # Force DPMS on in case the GPU missed the hotplug signal at boot.
         hyprctl dispatch dpms on DP-6 >/dev/null 2>&1
         hyprctl dispatch dpms on DP-7 >/dev/null 2>&1
         hyprctl dispatch dpms on DP-8 >/dev/null 2>&1
@@ -99,9 +100,9 @@ in {
     ssh.extraConfig = "Include ~/.config/ssh/work-hosts";
 
     zsh.shellAliases = {
-      nvdriver = "nvidia-smi --query-gpu=driver_version --format=csv,noheader";
-      nvkernel = "uname -r";
-      btop = "LD_LIBRARY_PATH=/run/opengl-driver/lib ${pkgs.btop}/bin/btop";
+      # Hostname is arch-serobja but flake attribute stays forge — override here.
+      nrs = lib.mkForce "nh os switch ~/code/nix-dots --hostname forge";
+      nrt = lib.mkForce "nh os test ~/code/nix-dots --hostname forge";
 
       apps = "cd ~/code/applications";
       core = "cd ~/code/core";
@@ -129,16 +130,7 @@ in {
   };
 
   wayland.windowManager.hyprland = {
-    extraConfig = ''
-      env = GBM_BACKEND,nvidia-drm
-      env = __GLX_VENDOR_LIBRARY_NAME,nvidia
-      env = NVD_BACKEND,direct
-    '';
     settings = {
-      # NVIDIA: let Hyprland auto-detect whether hardware cursors work.
-      # Replaces the legacy WLR_NO_HARDWARE_CURSORS env var.
-      # 0 = force hardware, 1 = force software, 2 = auto (recommended for NVIDIA)
-      cursor.no_hardware_cursors = 2;
       # Monitor layout and workspace placement are managed by kanshi.
       # The catch-all from hyprland.nix covers any output not matched by a profile.
 
