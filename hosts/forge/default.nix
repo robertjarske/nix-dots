@@ -5,7 +5,6 @@
 }: {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/hardware/nvidia.nix
     ../../modules/hardware/thunderbolt-dock.nix
     ../../modules/desktop/hyprland.nix
     ../../modules/desktop/sddm.nix
@@ -19,6 +18,7 @@
     ../../modules/work/dns.nix
     ../../modules/work/docker.nix
     ../../modules/work/apps.nix
+    ../../modules/work/defender.nix
     ../../modules/dev/php.nix
     ../../modules/dev/python.nix
     ../../modules/dev/devenv.nix
@@ -28,8 +28,6 @@
     hibernation.resumeOffset = 533760;
     secureboot.enable = true;
   };
-
-  hardware.nvidia-container-toolkit.enable = true;
 
   hardware.ipu6 = {
     enable = true;
@@ -48,6 +46,17 @@
       });
     })
   ];
+
+  services.mdatp = {
+    enable = true;
+    onboardingFile = config.age.secrets.mdatp-onboarding.path;
+  };
+
+  age.secrets.mdatp-onboarding = {
+    file = ../../secrets/mdatp-onboarding.age;
+    mode = "0640";
+    group = "mdatp";
+  };
 
   age.secrets.work-wifi.file = ../../secrets/work-wifi.age;
 

@@ -18,6 +18,8 @@ in {
   "work-dev-ca.age".publicKeys = masters ++ [forge];
   "work-ike-ca.age".publicKeys = masters ++ [forge];
 
+  "mdatp-onboarding.age".publicKeys = masters ++ [forge];
+
   "work-docker-registries.age".publicKeys = masters ++ [forge];
 
   "work-local-hosts.age".publicKeys = masters ++ [forge];
