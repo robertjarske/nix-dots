@@ -49,7 +49,6 @@
     userDirs = {
       enable = true;
       createDirectories = true;
-      setSessionVariables = true;
       # Explicit English names — avoids locale-dependent directory names on first login.
       desktop = "${config.home.homeDirectory}/Desktop";
       documents = "${config.home.homeDirectory}/Documents";
