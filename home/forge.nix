@@ -153,27 +153,31 @@ in {
   # descriptions in a different format than hyprctl reports them.
   # Each profile's exec rearranges workspaces after the layout is applied.
   services.kanshi.enable = true;
-  xdg.configFile."kanshi/config".text = ''
-    profile work {
-      output eDP-1 mode 3200x2000@60 position 0,0 scale 1.6
-      output DP-6 mode 2560x1440@59.95 position 2000,0 scale 1.0
-      output DP-7 mode 2560x1440@59.95 position 4560,0 scale 1.0
-      output DP-8 mode 2560x1440@59.95 position 7120,0 scale 1.0
-      exec ${hypr-workspace-layout} work
-    }
+  xdg = {
+    # Default changed in HM 26.05; set explicitly to keep XDG dirs in the session environment.
+    userDirs.setSessionVariables = true;
+    configFile."kanshi/config".text = ''
+      profile work {
+        output eDP-1 mode 3200x2000@60 position 0,0 scale 1.6
+        output DP-6 mode 2560x1440@59.95 position 2000,0 scale 1.0
+        output DP-7 mode 2560x1440@59.95 position 4560,0 scale 1.0
+        output DP-8 mode 2560x1440@59.95 position 7120,0 scale 1.0
+        exec ${hypr-workspace-layout} work
+      }
 
-    profile home {
-      output eDP-1 mode 3200x2000@120 position 0,0 scale 2.0
-      output DP-5 mode 2560x1440@75 position 1600,0 scale 1.0
-      output DP-6 mode 2560x1440@75 position 4160,0 scale 1.0
-      exec ${hypr-workspace-layout} home
-    }
+      profile home {
+        output eDP-1 mode 3200x2000@120 position 0,0 scale 2.0
+        output DP-5 mode 2560x1440@75 position 1600,0 scale 1.0
+        output DP-6 mode 2560x1440@75 position 4160,0 scale 1.0
+        exec ${hypr-workspace-layout} home
+      }
 
-    profile laptop {
-      output eDP-1 mode 3200x2000@120 position 0,0 scale 2.0
-      exec ${hypr-workspace-layout} laptop
-    }
-  '';
+      profile laptop {
+        output eDP-1 mode 3200x2000@120 position 0,0 scale 2.0
+        exec ${hypr-workspace-layout} laptop
+      }
+    '';
+  };
 
   # Azure Data Studio (VS Code-based) reads argv.json before starting.
   # Same gnome-libsecret fix as VS Code.
