@@ -1,4 +1,9 @@
 {pkgs, ...}: {
+  # Route scdaemon through pcscd instead of claiming the CCID USB interface
+  # directly. Without this, scdaemon and pcscd race for the interface and
+  # age-plugin-yubikey (which always uses pcscd) gets LIBUSB_ERROR_BUSY.
+  home.file.".gnupg/scdaemon.conf".text = "disable-ccid\n";
+
   # Automatically learn GPG card stubs at login and on YubiKey insertion.
   # Without this, GPG prompts "insert card with serial ..." even when the key is plugged in.
   #

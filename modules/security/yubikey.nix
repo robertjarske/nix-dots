@@ -21,6 +21,10 @@
     pinentryPackage = pkgs.pinentry-qt;
   };
 
+  # libfido2's udev rules assign FIDO2 devices to the plugdev group.
+  # Without this group, pam_u2f silently falls through to password auth.
+  users.groups.plugdev = {};
+
   environment.systemPackages = with pkgs; [
     yubikey-personalization
     yubikey-manager
