@@ -96,64 +96,67 @@ in {
       '';
     };
 
-    systemd.services.mdatp = {
-      description = "Microsoft Defender for Endpoint";
-      after = ["network.target"];
-      wantedBy = ["multi-user.target"];
-      serviceConfig = {
-        Type = "simple";
-        ExecStartPre = preStartScript;
-        # stdenv moves sbin/* to bin/ during fixup — use bin throughout
-        WorkingDirectory = "${mdatp}/bin";
-        ExecStart = "${mdatp}/bin/wdavdaemon";
-        NotifyAccess = "main";
-        LimitNOFILE = 65536;
-        Environment = ["MALLOC_ARENA_MAX=2" "ENABLE_CRASHPAD=1"];
-        Restart = "always";
-        Delegate = "yes";
+    systemd = {
+      services = {
+        mdatp = {
+          description = "Microsoft Defender for Endpoint";
+          after = ["network.target"];
+          wantedBy = ["multi-user.target"];
+          serviceConfig = {
+            Type = "simple";
+            ExecStartPre = preStartScript;
+            # stdenv moves sbin/* to bin/ during fixup — use bin throughout
+            WorkingDirectory = "${mdatp}/bin";
+            ExecStart = "${mdatp}/bin/wdavdaemon";
+            NotifyAccess = "main";
+            LimitNOFILE = 65536;
+            Environment = ["MALLOC_ARENA_MAX=2" "ENABLE_CRASHPAD=1"];
+            Restart = "always";
+            Delegate = "yes";
+          };
+          unitConfig = {
+            DefaultDependencies = false;
+            StartLimitInterval = 120;
+            StartLimitBurst = 3;
+          };
+        };
+
+        # Apply the EDR group tag once the daemon is healthy.
+        # The script polls for up to 2 minutes and always exits 0 so it
+        # never blocks activation.
+        mdatp-set-group-tag = lib.mkIf (cfg.groupTag != null) {
+          description = "Set Microsoft Defender EDR group tag";
+          after = ["mdatp.service"];
+          wants = ["mdatp.service"];
+          wantedBy = ["multi-user.target"];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            ExecStart = setGroupTagScript;
+          };
+        };
+
+        # Update definitions daily at 05:00, matching IT policy.
+        mdatp-definitions-update = {
+          description = "Update Microsoft Defender definitions";
+          after = ["network-online.target"];
+          wants = ["network-online.target"];
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = "${mdatp}/bin/wdavdaemonclient definitions update";
+          };
+        };
       };
-      unitConfig = {
-        DefaultDependencies = false;
-        StartLimitInterval = 120;
-        StartLimitBurst = 3;
+
+      timers.mdatp-definitions-update = {
+        description = "Update Microsoft Defender definitions every night";
+        wantedBy = ["timers.target"];
+        timerConfig = {
+          OnCalendar = "*-*-* 05:00";
+          Persistent = true;
+          Unit = "mdatp-definitions-update.service";
+        };
       };
     };
-
-    # Apply the EDR group tag once the daemon is healthy.
-    # The script polls for up to 2 minutes and always exits 0 so it
-    # never blocks activation.
-    systemd.services.mdatp-set-group-tag = lib.mkIf (cfg.groupTag != null) {
-      description = "Set Microsoft Defender EDR group tag";
-      after = ["mdatp.service"];
-      wants = ["mdatp.service"];
-      wantedBy = ["multi-user.target"];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        ExecStart = setGroupTagScript;
-      };
-    };
-
-    # Update definitions daily at 05:00, matching IT policy.
-    systemd.services.mdatp-definitions-update = {
-      description = "Update Microsoft Defender definitions";
-      after = ["network-online.target"];
-      wants = ["network-online.target"];
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${mdatp}/bin/wdavdaemonclient definitions update";
-      };
-    };
-
-    systemd.timers.mdatp-definitions-update = {
-      description = "Update Microsoft Defender definitions every night";
-      wantedBy = ["timers.target"];
-      timerConfig = {
-        OnCalendar = "*-*-* 05:00";
-        Persistent = true;
-        Unit = "mdatp-definitions-update.service";
-      };
-    };
-
   };
 }
