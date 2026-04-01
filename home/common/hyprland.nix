@@ -67,8 +67,8 @@
 
       swww img "$wallpaper" --transition-type fade --transition-duration 1
       ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
-      matugen image "$wallpaper"
-      matugen --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
+      matugen --source-color-index 0 image "$wallpaper"
+      matugen --source-color-index 0 --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
       pkill -USR1 kitty || true
       hyprpanel useTheme "$HOME/.config/ags/hyprpanel-matugen-theme.json" || true
     '';
@@ -126,8 +126,8 @@
 
       swww img "$wallpaper" --transition-type fade --transition-duration 1
       ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
-      matugen image "$wallpaper"
-      matugen --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
+      matugen --source-color-index 0 image "$wallpaper"
+      matugen --source-color-index 0 --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
       pkill -USR1 kitty || true
       hyprpanel useTheme "$HOME/.config/ags/hyprpanel-matugen-theme.json" || true
     '';
