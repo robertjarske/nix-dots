@@ -87,6 +87,7 @@ in {
     ./common/direnv.nix
     ./common/xdg.nix
     ./common/yubikey.nix
+    ./common/mdatp-notify.nix
   ];
 
   programs = {
@@ -139,6 +140,9 @@ in {
       windowrule = [
         "workspace 5 silent, match:class ^(teams-for-linux)$"
         "workspace 6 silent, match:class ^(vivaldi-stable)$"
+        "float 1, match:class ^(mdatp-details)$"
+        "size 760 380, match:class ^(mdatp-details)$"
+        "center 1, match:class ^(mdatp-details)$"
       ];
 
       exec-once = [
