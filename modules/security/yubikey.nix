@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   services = {
     pcscd.enable = true;
     udev = {
@@ -24,6 +28,7 @@
   # libfido2's udev rules assign FIDO2 devices to the plugdev group.
   # Without this group, pam_u2f silently falls through to password auth.
   users.groups.plugdev = {};
+  users.users.${config.host.username}.extraGroups = ["plugdev"];
 
   environment.systemPackages = with pkgs; [
     yubikey-personalization
@@ -39,7 +44,13 @@
   # No global enable — only sudo opts in, so login/sddm are unaffected.
   security.pam.u2f = {
     control = "sufficient";
-    settings.cue = true; # prints "Please touch your security key" on the prompt
+    settings = {
+      cue = true; # prints "Please touch your security key" on the prompt
+      # Use a fixed origin independent of hostname so credentials survive
+      # renames and work identically across all hosts.
+      origin = "pam://yubikey";
+      appid = "pam://yubikey";
+    };
   };
   security.pam.services.sudo.u2fAuth = true;
 }
