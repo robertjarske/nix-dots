@@ -85,11 +85,16 @@
       # swaync returns the 0-based button index, not the label string
       case "$action" in
         0)
-          kitty \
-            --class mdatp-details \
-            --title "Defender — Threat Details" \
-            ${mdatp-details}/bin/mdatp-details \
-            "$id" "$name" "$type" "$status" "$info_url"
+          # Run kitty in its own transient scope so it is outside the
+          # mdatp-action unit's cgroup.  Without this, systemd's default
+          # KillMode=control-group can cascade signals to other processes
+          # (e.g. swww-daemon) when the parent unit exits.
+          systemd-run --user --scope --unit="mdatp-details-$$" \
+            kitty \
+              --class mdatp-details \
+              --title "Defender — Threat Details" \
+              ${mdatp-details}/bin/mdatp-details \
+              "$id" "$name" "$type" "$status" "$info_url"
           ;;
         1)
           jq --arg id "$id" --arg name "$name" '. + {($id): $name}' "$DISMISSED_FILE" \
@@ -115,7 +120,8 @@
       [[ -f "$DISMISSED_FILE" ]] || echo '{}' > "$DISMISSED_FILE"
 
       threats_json=$(mdatp threat list --output json 2>/dev/null) || exit 0
-      threat_count=$(printf '%s' "$threats_json" | jq '[.threats.scans[].threats[]] | length')
+      threat_count=$(printf '%s' "$threats_json" \
+        | jq '[.threats.scans[].threats[] | select((.history | max_by(.key) | .value) != "removed")] | length')
 
       if [[ "$threat_count" -eq 0 ]]; then
         if [[ -f "$HAD_THREATS_FLAG" ]]; then
@@ -128,16 +134,23 @@
 
       touch "$HAD_THREATS_FLAG"
 
-      # Discover the active Wayland display for this user session
       runtime_dir="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-      wayland_display=$(find "$runtime_dir" -maxdepth 1 -name 'wayland-*' 2>/dev/null \
-        | head -1 | xargs -I{} basename {} 2>/dev/null || printf 'wayland-1')
+
+      # Read the Wayland display and Hyprland signature from the live systemd
+      # user environment (set by Hyprland at login via import-environment).
+      # The old find-based heuristic could pick up .lock files or the wrong
+      # socket, causing kitty to connect to a server without xdg-shell.
+      wayland_display=$(systemctl --user show-environment 2>/dev/null \
+        | sed -n 's/^WAYLAND_DISPLAY=//p')
+      wayland_display="''${wayland_display:-wayland-1}"
+      hyprland_sig=$(systemctl --user show-environment 2>/dev/null \
+        | sed -n 's/^HYPRLAND_INSTANCE_SIGNATURE=//p')
 
       while IFS= read -r threat; do
         id=$(printf '%s' "$threat" | jq -r '.tracking_id')
         name=$(printf '%s' "$threat" | jq -r '.name')
         type=$(printf '%s' "$threat" | jq -r '.type')
-        status=$(printf '%s' "$threat" | jq -r '.status')
+        status=$(printf '%s' "$threat" | jq -r '.current_status')
 
         dismissed=$(jq -r --arg id "$id" '.[$id] // empty' "$DISMISSED_FILE")
         [[ -n "$dismissed" ]] && continue
@@ -152,16 +165,26 @@
         # reuse it. The notify-send replace-id updates the notification in place.
         /run/current-system/sw/bin/systemctl --user stop "''${unit}.service" 2>/dev/null || true
         /run/current-system/sw/bin/systemctl --user reset-failed "''${unit}.service" 2>/dev/null || true
+
+        run_args=(
+          --user --no-block
+          "--unit=''${unit}"
+          "--setenv=HOME=$HOME"
+          "--setenv=DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS"
+          "--setenv=XDG_RUNTIME_DIR=$runtime_dir"
+          "--setenv=WAYLAND_DISPLAY=$wayland_display"
+        )
+        [[ -n "$hyprland_sig" ]] && \
+          run_args+=("--setenv=HYPRLAND_INSTANCE_SIGNATURE=$hyprland_sig")
+
         /run/current-system/sw/bin/systemd-run \
-          --user --no-block \
-          --unit="''${unit}" \
-          --setenv=HOME="$HOME" \
-          --setenv=DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" \
-          --setenv=XDG_RUNTIME_DIR="$runtime_dir" \
-          --setenv=WAYLAND_DISPLAY="$wayland_display" \
+          "''${run_args[@]}" \
           -- ${mdatp-action}/bin/mdatp-action \
           "$id" "$name" "$type" "$status" "$info_url" "$replace_id"
-      done < <(printf '%s' "$threats_json" | jq -c '.threats.scans[].threats[].threat')
+      done < <(printf '%s' "$threats_json" \
+        | jq -c '.threats.scans[].threats[]
+            | select((.history | max_by(.key) | .value) != "removed")
+            | .threat + {current_status: (.history | max_by(.key) | .value)}')
     '';
   };
 
@@ -206,7 +229,8 @@
             echo "Could not reach mdatp daemon." >&2
             exit 1
           }
-          threat_count=$(printf '%s' "$threats_json" | jq '[.threats.scans[].threats[]] | length')
+          threat_count=$(printf '%s' "$threats_json" \
+            | jq '[.threats.scans[].threats[] | select((.history | max_by(.key) | .value) != "removed")] | length')
           dismissed_count=$(jq 'length' "$DISMISSED_FILE")
 
           echo "Active threats: $threat_count"
@@ -215,8 +239,9 @@
           if [[ "$threat_count" -gt 0 ]]; then
             echo ""
             printf '%s' "$threats_json" \
-              | jq -r '.threats.scans[].threats[].threat
-                  | "  [\(.tracking_id)] \(.name) [\(.type)] — \(.status)"'
+              | jq -r '.threats.scans[].threats[]
+                  | select((.history | max_by(.key) | .value) != "removed")
+                  | "  [\(.threat.tracking_id)] \(.threat.name) [\(.threat.type)] — \(.history | max_by(.key) | .value)"'
           fi
 
           if [[ "$dismissed_count" -gt 0 ]]; then
@@ -226,15 +251,93 @@
           fi
           ;;
 
+        clean)
+          threats_json=$(mdatp threat list --output json 2>/dev/null) || {
+            echo "Could not reach mdatp daemon." >&2
+            exit 1
+          }
+
+          if [[ "''${2:-}" == "--all" ]]; then
+            ids=$(printf '%s' "$threats_json" \
+              | jq -r '.threats.scans[].threats[]
+                  | select((.history | max_by(.key) | .value) != "removed")
+                  | .threat.tracking_id')
+            if [[ -z "$ids" ]]; then
+              echo "No active threats to clean."
+              exit 0
+            fi
+          else
+            id="''${2:-}"
+            if [[ -z "$id" ]]; then
+              echo "Usage: mdatp-notify clean <id>" >&2
+              echo "       mdatp-notify clean --all" >&2
+              exit 1
+            fi
+            ids="$id"
+          fi
+
+          while IFS= read -r id; do
+            name=$(printf '%s' "$threats_json" \
+              | jq -r --arg id "$id" \
+                  '.threats.scans[].threats[].threat
+                   | select(.tracking_id == $id) | .name // "unknown"')
+            echo "Cleaning: $name [$id]"
+            sudo mdatp threat quarantine add --id "$id" \
+              && sudo mdatp threat quarantine remove --id "$id" \
+              && echo "  Done." \
+              || echo "  Failed." >&2
+          done <<< "$ids"
+          ;;
+
         *)
-          echo "Usage: mdatp-notify <status|dismiss <id>|undismiss>" >&2
+          echo "Usage: mdatp-notify <status|dismiss <id>|undismiss|clean <id>|clean --all>" >&2
           exit 1
           ;;
       esac
     '';
   };
 in {
-  home.packages = [mdatp-notify pkgs.libnotify];
+  home.packages = [
+    mdatp-notify
+    pkgs.libnotify
+    (pkgs.writeTextFile {
+      name = "mdatp-notify-zsh-completions";
+      destination = "/share/zsh/site-functions/_mdatp-notify";
+      text = ''
+        #compdef mdatp-notify
+
+        _mdatp-notify() {
+          local -a subcommands
+          subcommands=(
+            'status:Show active and dismissed threats'
+            'dismiss:Suppress notifications for a specific threat'
+            'undismiss:Clear all dismissed threats'
+            'clean:Quarantine and remove a threat'
+          )
+
+          local state
+          _arguments \
+            '1: :->subcommand' \
+            '*: :->args' && return 0
+
+          case $state in
+            subcommand)
+              _describe 'subcommand' subcommands
+              ;;
+            args)
+              case $words[2] in
+                clean)
+                  _values 'option' '--all[clean all active threats]'
+                  ;;
+              esac
+              ;;
+          esac
+        }
+
+        _mdatp-notify "$@"
+      '';
+    })
+  ];
 
   systemd.user.services.mdatp-notify = {
     Unit.Description = "Check Microsoft Defender threats and send desktop notifications";
