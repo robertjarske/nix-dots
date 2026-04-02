@@ -396,13 +396,27 @@ in {
         "swaync"
         "wl-paste --type text --watch cliphist store"
         "wl-paste --type image --watch cliphist store"
-        # Start swww daemon, immediately show fallback color, then fade in the real wallpaper.
-        # swww img waits for the daemon internally so the two commands can run concurrently.
-        "swww-daemon"
+        # swww-daemon is managed by a systemd user service (see below) so it
+        # auto-restarts on crash. swww img waits for the socket internally.
         "bash -c 'swww img ${fallbackWallpaper} && wallpaper-restore'"
         # Re-apply wallpaper to any monitor added after login (e.g. dock).
         "wallpaper-monitor-listener"
       ];
     };
+  };
+
+  systemd.user.services.swww-daemon = {
+    Unit = {
+      Description = "swww wallpaper daemon";
+      PartOf = ["graphical-session.target"];
+      After = ["graphical-session.target"];
+    };
+    Service = {
+      ExecStart = "${pkgs.swww}/bin/swww-daemon";
+      ExecStartPost = "${wallpaper-restore}/bin/wallpaper-restore";
+      Restart = "always";
+      RestartSec = "3s";
+    };
+    Install.WantedBy = ["graphical-session.target"];
   };
 }
