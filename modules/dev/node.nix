@@ -3,5 +3,7 @@
     nodejs_24
     corepack
     yarn
+    nodePackages.prettier
+    nodePackages.eslint
   ];
 }
