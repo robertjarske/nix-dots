@@ -20,6 +20,9 @@
 
       kitty.input_path  = '~/.config/matugen/templates/colors-kitty.conf'
       kitty.output_path = '~/.config/kitty/kitty-colors.conf'
+
+      wayle.input_path  = '~/.config/matugen/templates/wayle-colors.json'
+      wayle.output_path = '~/.cache/wayle/matugen-colors.json'
     '';
 
     # Separate config for HyprPanel — run with --contrast 1 so button
@@ -525,6 +528,22 @@
       # white
       color15  #e7e7e7
       color7   #f0f0f0
+    '';
+
+    # Wayle bar — color palette written to ~/.cache/wayle/matugen-colors.json
+    # so wayle's matugen theme-provider can pick it up.
+    "matugen/templates/wayle-colors.json".text = ''
+      {
+        "colors": {
+          "background":        { "dark": "{{colors.background.dark.hex}}",        "light": "{{colors.background.light.hex}}" },
+          "on_background":     { "dark": "{{colors.on_background.dark.hex}}",     "light": "{{colors.on_background.light.hex}}" },
+          "on_surface_variant":{ "dark": "{{colors.on_surface_variant.dark.hex}}","light": "{{colors.on_surface_variant.light.hex}}" },
+          "primary":           { "dark": "{{colors.primary.dark.hex}}",           "light": "{{colors.primary.light.hex}}" },
+          "secondary":         { "dark": "{{colors.secondary.dark.hex}}",         "light": "{{colors.secondary.light.hex}}" },
+          "tertiary":          { "dark": "{{colors.tertiary.dark.hex}}",          "light": "{{colors.tertiary.light.hex}}" },
+          "error":             { "dark": "{{colors.error.dark.hex}}",             "light": "{{colors.error.light.hex}}" }
+        }
+      }
     '';
   };
 }

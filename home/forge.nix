@@ -193,6 +193,8 @@ in {
 
     packages = [
       unstable.onlyoffice-desktopeditors
+      unstable.zed-editor
+      (pkgs.callPackage ../pkgs/wayle.nix {})
     ];
 
     stateVersion = "25.11";
