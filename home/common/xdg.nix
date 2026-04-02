@@ -3,6 +3,13 @@
     mimeApps = {
       enable = true;
       defaultApplications = {
+        "x-scheme-handler/http" = "vivaldi-stable.desktop";
+        "x-scheme-handler/https" = "vivaldi-stable.desktop";
+        "x-scheme-handler/ftp" = "vivaldi-stable.desktop";
+        "x-scheme-handler/chrome" = "vivaldi-stable.desktop";
+        "text/html" = "vivaldi-stable.desktop";
+        "application/xhtml+xml" = "vivaldi-stable.desktop";
+
         "inode/directory" = "org.gnome.Nautilus.desktop";
         "x-scheme-handler/file" = "org.gnome.Nautilus.desktop";
 
