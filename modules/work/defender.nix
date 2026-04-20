@@ -69,8 +69,14 @@
       enableFileHashComputation = false;
       threatTypeSettingsMergePolicy = "merge";
       threatTypeSettings = [
-        {key = "potentially_unwanted_application"; value = "block";}
-        {key = "archive_bomb"; value = "audit";}
+        {
+          key = "potentially_unwanted_application";
+          value = "block";
+        }
+        {
+          key = "archive_bomb";
+          value = "audit";
+        }
       ];
       scanFileModifyPermissions = true;
       scanFileModifyOwnership = false;
