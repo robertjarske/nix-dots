@@ -44,6 +44,11 @@
         initrd = {
           systemd.enable = true;
 
+          # aes_generic was removed in Linux 7.0 (merged into the AES library).
+          # nixos-25.11 default still includes it; override to match nixpkgs master.
+          # Tracked upstream: github.com/NixOS/nixpkgs/issues/501777
+          luks.cryptoModules = ["aes" "blowfish" "twofish" "serpent" "cbc" "xts" "lrw" "sha1" "sha256" "sha512" "af_alg" "algif_skcipher" "cryptd" "input_leds"];
+
           luks.devices."cryptroot" = {
             device = "/dev/disk/by-partlabel/disk-main-luks";
             allowDiscards = true;

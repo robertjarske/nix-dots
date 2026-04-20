@@ -29,6 +29,11 @@
     secureboot.enable = true;
   };
 
+  # Kioxia KXG80ZNV1T02: APST drops to PS4 after 2s idle. PS4 has multi-second
+  # exit latency which causes 2-3 minute I/O hangs in apps like VSCode and Vivaldi.
+  # Cap APST to power states with exit latency ≤ 5.5ms (PS0-PS3 on this drive).
+  boot.kernelParams = ["nvme_core.default_ps_max_latency_us=5500"];
+
   hardware.ipu6 = {
     enable = true;
     platform = "ipu6epmtl"; # Meteor Lake (Intel Core Ultra 7 155H)

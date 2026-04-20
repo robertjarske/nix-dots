@@ -45,7 +45,7 @@
   # swww img waits for the daemon internally so no explicit delay is needed.
   wallpaper-restore = pkgs.writeShellApplication {
     name = "wallpaper-restore";
-    runtimeInputs = [pkgs.swww pkgs.matugen hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    runtimeInputs = [pkgs.awww pkgs.matugen hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
       current_file="$HOME/.config/hypr/current_wallpaper"
       wallpaper=""
@@ -65,7 +65,7 @@
         printf '%s' "$wallpaper" > "$current_file"
       fi
 
-      swww img "$wallpaper" --transition-type fade --transition-duration 1
+      awww img "$wallpaper" --transition-type fade --transition-duration 1
       ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
       matugen --source-color-index 0 image "$wallpaper"
       matugen --source-color-index 0 --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
@@ -78,7 +78,7 @@
   # Keybind: CTRL+ALT+W — call this when you want to change wallpaper.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [pkgs.swww pkgs.matugen pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    runtimeInputs = [pkgs.awww pkgs.matugen pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
       # Prevent concurrent runs — rapid invocations would run matugen in parallel.
       exec 9>/tmp/wallpaper-change.lock
@@ -124,7 +124,7 @@
       mkdir -p "$(dirname "$current_file")"
       printf '%s' "$wallpaper" > "$current_file"
 
-      swww img "$wallpaper" --transition-type fade --transition-duration 1
+      awww img "$wallpaper" --transition-type fade --transition-duration 1
       ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
       matugen --source-color-index 0 image "$wallpaper"
       matugen --source-color-index 0 --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
@@ -412,8 +412,11 @@ in {
       After = ["graphical-session.target"];
     };
     Service = {
-      ExecStart = "${pkgs.swww}/bin/swww-daemon";
-      ExecStartPost = "${wallpaper-restore}/bin/wallpaper-restore";
+      ExecStart = "${pkgs.awww}/bin/awww-daemon";
+      # Prefix with '-' so a failure here (e.g. socket not ready on first boot)
+      # does not fail the service. Initial wallpaper is set by exec-once; this
+      # only matters for daemon restarts where the socket already exists.
+      ExecStartPost = "-${wallpaper-restore}/bin/wallpaper-restore";
       Restart = "always";
       RestartSec = "3s";
     };
