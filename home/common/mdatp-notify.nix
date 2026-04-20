@@ -121,7 +121,7 @@
 
       threats_json=$(mdatp threat list --output json 2>/dev/null) || exit 0
       threat_count=$(printf '%s' "$threats_json" \
-        | jq '[.threats.scans[].threats[] | select((.history | max_by(.key) | .value) != "removed")] | length')
+        | jq '[.threats.scans[].threats[] | select((.history | max_by(.key) | .value) | . != "removed" and . != "not_found")] | length')
 
       if [[ "$threat_count" -eq 0 ]]; then
         if [[ -f "$HAD_THREATS_FLAG" ]]; then
@@ -183,7 +183,7 @@
           "$id" "$name" "$type" "$status" "$info_url" "$replace_id"
       done < <(printf '%s' "$threats_json" \
         | jq -c '.threats.scans[].threats[]
-            | select((.history | max_by(.key) | .value) != "removed")
+            | select((.history | max_by(.key) | .value) | . != "removed" and . != "not_found")
             | .threat + {current_status: (.history | max_by(.key) | .value)}')
     '';
   };
@@ -230,7 +230,7 @@
             exit 1
           }
           threat_count=$(printf '%s' "$threats_json" \
-            | jq '[.threats.scans[].threats[] | select((.history | max_by(.key) | .value) != "removed")] | length')
+            | jq '[.threats.scans[].threats[] | select((.history | max_by(.key) | .value) | . != "removed" and . != "not_found")] | length')
           dismissed_count=$(jq 'length' "$DISMISSED_FILE")
 
           echo "Active threats: $threat_count"
@@ -240,7 +240,7 @@
             echo ""
             printf '%s' "$threats_json" \
               | jq -r '.threats.scans[].threats[]
-                  | select((.history | max_by(.key) | .value) != "removed")
+                  | select((.history | max_by(.key) | .value) | . != "removed" and . != "not_found")
                   | "  [\(.threat.tracking_id)] \(.threat.name) [\(.threat.type)] — \(.history | max_by(.key) | .value)"'
           fi
 
@@ -260,7 +260,7 @@
           if [[ "''${2:-}" == "--all" ]]; then
             ids=$(printf '%s' "$threats_json" \
               | jq -r '.threats.scans[].threats[]
-                  | select((.history | max_by(.key) | .value) != "removed")
+                  | select((.history | max_by(.key) | .value) | . != "removed" and . != "not_found")
                   | .threat.tracking_id')
             if [[ -z "$ids" ]]; then
               echo "No active threats to clean."

@@ -12,13 +12,86 @@
   preStartScript = pkgs.writeShellScript "mdatp-prestart" ''
     set -euo pipefail
     INSTALL=/opt/microsoft/mdatp
-    mkdir -p /opt/microsoft
-    if [[ -L $INSTALL && $(readlink $INSTALL) == ${mdatp} ]]; then
-      exit 0
-    fi
-    rm -f $INSTALL
-    ln -s ${mdatp} $INSTALL
+    UPPER=/var/lib/mdatp-overlay/upper
+    WORK=/var/lib/mdatp-overlay/work
+
+    # Replace any legacy symlink with a real directory (overlay mount target).
+    if [[ -L $INSTALL ]]; then rm -f "$INSTALL"; fi
+    mkdir -p /opt/microsoft "$INSTALL"
+
+    # Use overlayfs (not a plain bind mount) so /proc/[pid]/exe resolves to
+    # /opt/microsoft/mdatp/... paths AND the directory appears writable.
+    # A plain bind mount of the nix store exposes a mode-555 directory;
+    # wdavdaemon's permission_checker fails when it cannot create files there.
+    # The overlay upper layer (on /var/lib) absorbs all writes.
+    fstype=$(${pkgs.util-linux}/bin/findmnt -n -o FSTYPE "$INSTALL" 2>/dev/null || true)
+    opts=$(${pkgs.util-linux}/bin/findmnt -n -o OPTIONS "$INSTALL" 2>/dev/null || true)
+    # Extract lowerdir= value using bash only (no sed/awk in PATH here).
+    lower=""
+    for opt in ''${opts//,/ }; do
+      [[ "$opt" == lowerdir=* ]] && lower="''${opt#lowerdir=}" && break
+    done
+    if [[ "$fstype" == "overlay" && "$lower" == "${mdatp}" ]]; then exit 0; fi
+
+    ${pkgs.util-linux}/bin/mountpoint -q "$INSTALL" \
+      && ${pkgs.util-linux}/bin/umount "$INSTALL" || true
+
+    # Clear stale upper/work dirs so a derivation update takes full effect.
+    rm -rf "$UPPER" "$WORK"
+    mkdir -p "$UPPER" "$WORK"
+
+    ${pkgs.util-linux}/bin/mount -t overlay overlay \
+      -o "lowerdir=${mdatp},upperdir=$UPPER,workdir=$WORK" \
+      "$INSTALL"
   '';
+
+  # Managed configuration profile — deployed to the well-known path that
+  # wdavdaemon reads on startup.
+  managedConfig = pkgs.writeText "mdatp_managed.json" (builtins.toJSON {
+    antivirusEngine = {
+      enforcementLevel = "passive";
+      behaviorMonitoring = "disabled";
+      # Trigger a scan automatically after each definition update.
+      # Combined with the daily definitions timer this gives one scan/day
+      # without a separate scan service.
+      scanAfterDefinitionUpdate = true;
+      # Archive scanning is critical — npm/pip packages are tarballs and
+      # supply-chain attacks (e.g. axios) are embedded inside them.
+      scanArchives = true;
+      scanHistoryMaximumItems = 10000;
+      scanResultsRetentionDays = 90;
+      maximumOnDemandScanThreads = 2;
+      exclusionsMergePolicy = "merge";
+      # Prevent users from accidentally un-quarantining detections.
+      disallowedThreatActions = ["allow" "restore"];
+      nonExecMountPolicy = "unmute";
+      unmonitoredFilesystems = ["nfs" "fuse"];
+      enableFileHashComputation = false;
+      threatTypeSettingsMergePolicy = "merge";
+      threatTypeSettings = [
+        {key = "potentially_unwanted_application"; value = "block";}
+        {key = "archive_bomb"; value = "audit";}
+      ];
+      scanFileModifyPermissions = true;
+      scanFileModifyOwnership = false;
+      scanNetworkSocketEvent = false;
+    };
+    cloudService = {
+      enabled = true;
+      diagnosticLevel = "optional";
+      automaticSampleSubmissionConsent = "safe";
+      automaticDefinitionUpdateEnabled = true;
+      definitionUpdatesInterval = 28800;
+    };
+    features = {
+      moduleLoad = "disabled";
+      ebpfSupplementaryEventProvider = "enabled";
+    };
+    networkProtection = {
+      enforcementLevel = "disabled";
+      disableIcmpInspection = true;
+    };
+  });
 
   # Wait for mdatp to report healthy before setting the tag.
   # Exits 0 regardless so activation is never blocked.
@@ -64,6 +137,11 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    environment.etc."opt/microsoft/mdatp/mdatp_managed.json" = {
+      source = managedConfig;
+      mode = "0644";
+    };
+
     # nix-ld is required — mdatp binaries use NIX_LD instead of patched ELF
     # to avoid tripping anti-tamper checks.
     programs.nix-ld.enable = lib.mkForce true;
@@ -105,17 +183,39 @@ in {
           serviceConfig = {
             Type = "simple";
             ExecStartPre = preStartScript;
-            # stdenv moves sbin/* to bin/ during fixup — use bin throughout
-            WorkingDirectory = "${mdatp}/bin";
-            ExecStart = "${mdatp}/bin/wdavdaemon";
+            # Use the stable symlink path as WorkingDirectory so wdavdaemon
+            # resolves sibling binaries (sensecm, senseir …) relative to the
+            # well-known /opt/microsoft/mdatp/sbin/ prefix, matching the
+            # layout Microsoft hardcodes in the official service unit.
+            # Use the nix store path as WorkingDirectory so ExecStartPre
+            # (the bind-mount script) can chdir there before /opt/microsoft/mdatp
+            # is mounted.  wdavdaemon resolves siblings via /proc/self/exe, not
+            # CWD, so this has no effect on binary resolution.
+            WorkingDirectory = "${mdatp}/sbin";
+            ExecStart = "/opt/microsoft/mdatp/sbin/wdavdaemon";
             NotifyAccess = "main";
             LimitNOFILE = 65536;
-            Environment = ["MALLOC_ARENA_MAX=2" "ENABLE_CRASHPAD=1"];
+            # No wrapProgram is used for any mdatp binary (see pkgs/mdatp.nix).
+            # All binaries are real ELFs so that
+            # anti-tamper checks on /proc/self/exe and /proc/[ppid]/exe succeed.
+            # nix-ld handles library resolution for all of them via NIX_LD +
+            # NIX_LD_LIBRARY_PATH, which wdavdaemon and every child process it
+            # spawns inherit from the service environment below.
+            Environment = [
+              "MALLOC_ARENA_MAX=2"
+              "ENABLE_CRASHPAD=1"
+              "NIX_LD=${pkgs.stdenv.cc.bintools.dynamicLinker}"
+              "NIX_LD_LIBRARY_PATH=${mdatp}/lib:${mdatp.passthru.libPath}"
+              "LD_LIBRARY_PATH=/opt/microsoft/mdatp/lib/"
+              "PATH=${lib.makeBinPath [pkgs.coreutils pkgs.gnugrep]}:$PATH"
+              # Security hardening from official service — prevent injected libs.
+              "LD_PRELOAD="
+              "LD_AUDIT="
+            ];
             Restart = "always";
             Delegate = "yes";
           };
           unitConfig = {
-            DefaultDependencies = false;
             StartLimitInterval = 120;
             StartLimitBurst = 3;
           };
@@ -146,6 +246,33 @@ in {
             ExecStart = "${mdatp}/bin/wdavdaemonclient definitions update";
           };
         };
+
+        # Full scan weekly on Sunday at 02:00. Full scan is required to cover
+        # package caches (npm, pip, cargo) where supply-chain attacks land.
+        mdatp-scan-full = {
+          description = "Microsoft Defender full scan";
+          after = ["mdatp.service"];
+          wants = ["mdatp.service"];
+          serviceConfig = {
+            Type = "oneshot";
+            # mdatp.service is Type=simple so systemd marks it started before
+            # wdavdaemon is ready. Poll until healthy (same pattern as
+            # mdatp-set-group-tag) so the scan never runs against a dead socket.
+            ExecStartPre = pkgs.writeShellScript "wait-mdatp-healthy" ''
+              for i in $(seq 1 24); do
+                if ${mdatp}/bin/mdatp health --field healthy 2>/dev/null | grep -q '^true$'; then
+                  exit 0
+                fi
+                sleep 5
+              done
+              echo "mdatp not healthy after 2 minutes, aborting scan" >&2
+              exit 1
+            '';
+            ExecStart = "${mdatp}/bin/mdatp scan full";
+            # Scans can take hours — no timeout.
+            TimeoutSec = "infinity";
+          };
+        };
       };
 
       timers.mdatp-definitions-update = {
@@ -155,6 +282,16 @@ in {
           OnCalendar = "*-*-* 05:00";
           Persistent = true;
           Unit = "mdatp-definitions-update.service";
+        };
+      };
+
+      timers.mdatp-scan-full = {
+        description = "Run Microsoft Defender full scan weekly";
+        wantedBy = ["timers.target"];
+        timerConfig = {
+          OnCalendar = "Sun *-*-* 02:00";
+          Persistent = true;
+          Unit = "mdatp-scan-full.service";
         };
       };
     };
