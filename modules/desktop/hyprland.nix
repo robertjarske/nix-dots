@@ -12,6 +12,10 @@
     package = unstable.hyprland;
     portalPackage = unstable.xdg-desktop-portal-hyprland;
     xwayland.enable = true;
+    # Hyprland 0.50+ ships a hyprland-uwsm.desktop session that SDDM picks up.
+    # withUWSM installs the required systemd user unit templates; without it
+    # uwsm start fails immediately and the session never launches.
+    withUWSM = true;
   };
 
   # XDG portal for screen sharing, file pickers etc.
@@ -55,6 +59,5 @@
     playerctl # Media key control
     networkmanagerapplet # NM system tray (VPN toggle, connection editing)
     wofi # Launcher (fallback)
-    swaynotificationcenter # Notification daemon with panel
   ];
 }

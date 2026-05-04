@@ -7,6 +7,7 @@
     xcp # modern cp
     moreutils # sponge etc.
     jq # json processing
+    shfmt # shell formatter
     unzip # extracting .zip archives
     p7zip # extracting .7z, .xz, .rar, .tar.xz, and more
     dive # docker image explorer

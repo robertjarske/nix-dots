@@ -88,6 +88,7 @@ in {
     ./common/xdg.nix
     ./common/yubikey.nix
     ./common/mdatp-notify.nix
+    ./common/wayle.nix
   ];
 
   programs = {
@@ -194,7 +195,7 @@ in {
     packages = [
       unstable.onlyoffice-desktopeditors
       unstable.zed-editor
-      (pkgs.callPackage ../pkgs/wayle.nix {})
+      pkgs.qalculate-gtk
     ];
 
     stateVersion = "25.11";

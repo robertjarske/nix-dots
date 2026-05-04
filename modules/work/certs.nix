@@ -54,6 +54,7 @@
   environment.sessionVariables = {
     NIX_SSL_CERT_FILE = "/run/work-certs/ca-bundle.pem";
     SSL_CERT_FILE = "/run/work-certs/ca-bundle.pem";
+    SSL_CERT_DIR = "/etc/ssl/certs";
     CURL_CA_BUNDLE = "/run/work-certs/ca-bundle.pem";
     GIT_SSL_CAINFO = "/run/work-certs/ca-bundle.pem";
     NODE_EXTRA_CA_CERTS = "/run/work-certs/ca-bundle.pem";

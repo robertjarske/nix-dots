@@ -22,6 +22,7 @@
     ../../modules/dev/php.nix
     ../../modules/dev/python.nix
     ../../modules/dev/devenv.nix
+    ../../modules/dev/waydroid.nix
   ];
 
   host = {

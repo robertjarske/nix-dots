@@ -45,7 +45,7 @@
   # swww img waits for the daemon internally so no explicit delay is needed.
   wallpaper-restore = pkgs.writeShellApplication {
     name = "wallpaper-restore";
-    runtimeInputs = [pkgs.awww pkgs.matugen hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    runtimeInputs = [unstable.awww pkgs.matugen hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
       current_file="$HOME/.config/hypr/current_wallpaper"
       wallpaper=""
@@ -78,7 +78,7 @@
   # Keybind: CTRL+ALT+W — call this when you want to change wallpaper.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [pkgs.awww pkgs.matugen pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    runtimeInputs = [unstable.awww pkgs.matugen pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
       # Prevent concurrent runs — rapid invocations would run matugen in parallel.
       exec 9>/tmp/wallpaper-change.lock
@@ -203,6 +203,9 @@ in {
   wayland.windowManager.hyprland = {
     enable = true;
     package = unstable.hyprland;
+    # UWSM manages graphical-session.target activation; disabling home-manager's
+    # own systemd integration avoids a double-activation conflict.
+    systemd.enable = false;
     settings = {
       # Catch-all: any monitor not matched by a host-specific rule gets its
       # preferred resolution, auto-placed, at scale 1.
@@ -387,20 +390,19 @@ in {
       ];
 
       exec-once = [
-        "hyprpolkitagent"
-        "udiskie --tray"
-        "nm-applet --indicator"
-        "yubikey-touch-detector --libnotify"
-        "hypridle"
-        "hyprpanel"
-        "swaync"
-        "wl-paste --type text --watch cliphist store"
-        "wl-paste --type image --watch cliphist store"
-        # swww-daemon is managed by a systemd user service (see below) so it
-        # auto-restarts on crash. swww img waits for the socket internally.
-        "bash -c 'swww img ${fallbackWallpaper} && wallpaper-restore'"
+        "uwsm app -- ${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent"
+        "uwsm app -- udiskie --tray"
+        "uwsm app -- nm-applet --indicator"
+        "uwsm app -- yubikey-touch-detector --libnotify"
+        "uwsm app -- hypridle"
+        "uwsm app -- wl-paste --type text --watch cliphist store"
+        "uwsm app -- wl-paste --type image --watch cliphist store"
+        # awww-daemon is managed by a systemd user service (see below) so it
+        # auto-restarts on crash. awww img waits for the socket internally.
+        # One-shot setup script — no persistent cgroup needed.
+        "bash -c 'awww img ${fallbackWallpaper} && wallpaper-restore'"
         # Re-apply wallpaper to any monitor added after login (e.g. dock).
-        "wallpaper-monitor-listener"
+        "uwsm app -- wallpaper-monitor-listener"
       ];
     };
   };
@@ -412,7 +414,7 @@ in {
       After = ["graphical-session.target"];
     };
     Service = {
-      ExecStart = "${pkgs.awww}/bin/awww-daemon";
+      ExecStart = "${unstable.awww}/bin/awww-daemon";
       # Prefix with '-' so a failure here (e.g. socket not ready on first boot)
       # does not fail the service. Initial wallpaper is set by exec-once; this
       # only matters for daemon restarts where the socket already exists.
