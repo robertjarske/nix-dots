@@ -38,9 +38,26 @@ jobs:
       - name: Validate flake schema
         run: nix flake check
       - name: Build bastion configuration
-        run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --out-link result-bastion
+        run: |
+          nix build .#nixosConfigurations.bastion.config.system.build.toplevel \
+            --out-link result-bastion \
+            --option max-jobs 2 \
+            --log-format bar-with-logs 2>&1 | tee build-bastion.log
       - name: Build forge configuration
-        run: nix build .#nixosConfigurations.forge.config.system.build.toplevel --out-link result-forge
+        run: |
+          nix build .#nixosConfigurations.forge.config.system.build.toplevel \
+            --out-link result-forge \
+            --option max-jobs 2 \
+            --log-format bar-with-logs 2>&1 | tee build-forge.log
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build-bastion.log
+            build-forge.log
+          if-no-files-found: ignore
       - name: Build base bastion configuration
         if: github.event_name == 'pull_request'
         run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --out-link ${{ github.workspace }}/result-base-bastion
