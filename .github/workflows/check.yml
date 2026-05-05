@@ -26,7 +26,7 @@ jobs:
           haskell: true
           large-packages: true
           docker-images: true
-          swap-storage: true
+          swap-storage: false
       - uses: DeterminateSystems/nix-installer-action@v22
       - uses: DeterminateSystems/magic-nix-cache-action@v13
       - name: Lint (statix)
@@ -41,13 +41,13 @@ jobs:
         run: |
           nix build .#nixosConfigurations.bastion.config.system.build.toplevel \
             --out-link result-bastion \
-            --option max-jobs 2 \
+            --option max-jobs 1 \
             --log-format bar-with-logs 2>&1 | tee build-bastion.log
       - name: Build forge configuration
         run: |
           nix build .#nixosConfigurations.forge.config.system.build.toplevel \
             --out-link result-forge \
-            --option max-jobs 2 \
+            --option max-jobs 1 \
             --log-format bar-with-logs 2>&1 | tee build-forge.log
       - name: Upload build logs
         if: always()
