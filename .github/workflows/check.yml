@@ -48,7 +48,7 @@ jobs:
         run: |
           nix build .#nixosConfigurations.bastion.config.system.build.toplevel \
             --out-link result-bastion \
-            --option max-jobs 2 \
+            --option max-jobs 1 \
             --log-format bar-with-logs 2>&1 | tee build-bastion.log
       - name: Build base bastion configuration
         if: github.event_name == 'pull_request'
@@ -90,7 +90,7 @@ jobs:
         run: |
           nix build .#nixosConfigurations.forge.config.system.build.toplevel \
             --out-link result-forge \
-            --option max-jobs 2 \
+            --option max-jobs 1 \
             --log-format bar-with-logs 2>&1 | tee build-forge.log
       - name: Build base forge configuration
         if: github.event_name == 'pull_request'
