@@ -12,6 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.base_ref }}
+          path: .base
       - uses: DeterminateSystems/nix-installer-action@v22
       - uses: DeterminateSystems/magic-nix-cache-action@v13
       - name: Lint (statix)
@@ -22,15 +27,68 @@ jobs:
         run: nix fmt -- --check .
       - name: Validate flake schema
         run: nix flake check
-      - name: Evaluate bastion configuration
+      - name: Evaluate bastion
+        run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --dry-run
+      - name: Evaluate forge
+        run: nix build .#nixosConfigurations.forge.config.system.build.toplevel --dry-run
+      - name: Package diff
+        if: github.event_name == 'pull_request'
         run: |
-          echo "## bastion" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          nix build .#nixosConfigurations.bastion.config.system.build.toplevel --dry-run 2>&1 | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-      - name: Evaluate forge configuration
-        run: |
-          echo "## forge" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          nix build .#nixosConfigurations.forge.config.system.build.toplevel --dry-run 2>&1 | tee -a $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          set -euo pipefail
+
+          get_pkgs() {
+            local attr="$1" dir="${2:-.}"
+            local drv
+            drv=$(cd "$dir" && nix eval --raw "$attr" 2>/dev/null)
+            nix-store -q --requisites "$drv" 2>/dev/null \
+              | sed 's|.*/[a-z0-9]*-||; s|\.drv$||' \
+              | sort -u
+          }
+
+          get_pkgs '.#nixosConfigurations.bastion.config.system.build.toplevel.drvPath' '.'     > /tmp/bastion-current.txt
+          get_pkgs '.#nixosConfigurations.bastion.config.system.build.toplevel.drvPath' '.base' > /tmp/bastion-base.txt
+          get_pkgs '.#nixosConfigurations.forge.config.system.build.toplevel.drvPath'   '.'     > /tmp/forge-current.txt
+          get_pkgs '.#nixosConfigurations.forge.config.system.build.toplevel.drvPath'   '.base' > /tmp/forge-base.txt
+
+          python3 << 'PYEOF' >> $GITHUB_STEP_SUMMARY
+import re
+
+def parse(s):
+    m = re.search(r'-(\d[^-]*)$', s)
+    return (s[:m.start()], m.group(1)) if m else (s, '')
+
+def load(path):
+    pkgs = {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                name, ver = parse(line)
+                pkgs[name] = ver
+    return pkgs
+
+def section(title, base_f, current_f):
+    base = load(base_f)
+    current = load(current_f)
+    changed, added, removed = [], [], []
+    for pkg in sorted(set(base) | set(current)):
+        if pkg in base and pkg in current:
+            if base[pkg] != current[pkg]:
+                changed.append(f"| `{pkg}` | `{base[pkg]}` | `{current[pkg]}` |")
+        elif pkg in current:
+            added.append(f"| `{pkg}` | — | `{current[pkg]}` |")
+        else:
+            removed.append(f"| `{pkg}` | `{base[pkg]}` | — |")
+
+    print(f"\n## {title}\n")
+    if not (changed or added or removed):
+        print("No package changes.")
+        return
+    print("| Package | Before | After |")
+    print("|---------|--------|-------|")
+    for row in changed + added + removed:
+        print(row)
+
+section("bastion", "/tmp/bastion-base.txt", "/tmp/bastion-current.txt")
+section("forge",   "/tmp/forge-base.txt",   "/tmp/forge-current.txt")
+PYEOF

@@ -29,4 +29,8 @@ _: {
   };
 
   nixpkgs.config.allowUnfree = true;
+
+  # Disable NixOS options doc generation — avoids builtins.derivation
+  # context warning and speeds up evaluation.
+  documentation.nixos.enable = false;
 }
