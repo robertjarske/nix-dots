@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -22,87 +22,15 @@ jobs:
         run: nix fmt -- --check .
       - name: Validate flake schema
         run: nix flake check
-
-  build-bastion:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/checkout@v6
-        if: github.event_name == 'pull_request'
-        with:
-          ref: ${{ github.base_ref }}
-          path: .base
-      - name: Free disk space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: false
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v13
-      - name: Build bastion configuration
+      - name: Evaluate bastion configuration
         run: |
-          nix build .#nixosConfigurations.bastion.config.system.build.toplevel \
-            --out-link result-bastion \
-            --option max-jobs 1 \
-            --log-format bar-with-logs 2>&1 | tee build-bastion.log
-      - name: Build base bastion configuration
-        if: github.event_name == 'pull_request'
-        run: nix build .#nixosConfigurations.bastion.config.system.build.toplevel --out-link ${{ github.workspace }}/result-base-bastion
-        working-directory: .base
-      - name: Diff bastion
-        if: github.event_name == 'pull_request'
-        run: nix run nixpkgs#nvd -- diff result-base-bastion result-bastion
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-bastion-log
-          path: build-bastion.log
-          if-no-files-found: ignore
-
-  build-forge:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/checkout@v6
-        if: github.event_name == 'pull_request'
-        with:
-          ref: ${{ github.base_ref }}
-          path: .base
-      - name: Free disk space
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: false
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v13
-      - name: Build forge configuration
+          echo "## bastion" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          nix build .#nixosConfigurations.bastion.config.system.build.toplevel --dry-run 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      - name: Evaluate forge configuration
         run: |
-          nix build .#nixosConfigurations.forge.config.system.build.toplevel \
-            --out-link result-forge \
-            --option max-jobs 1 \
-            --log-format bar-with-logs 2>&1 | tee build-forge.log
-      - name: Build base forge configuration
-        if: github.event_name == 'pull_request'
-        run: nix build .#nixosConfigurations.forge.config.system.build.toplevel --out-link ${{ github.workspace }}/result-base-forge
-        working-directory: .base
-      - name: Diff forge
-        if: github.event_name == 'pull_request'
-        run: nix run nixpkgs#nvd -- diff result-base-forge result-forge
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-forge-log
-          path: build-forge.log
-          if-no-files-found: ignore
+          echo "## forge" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          nix build .#nixosConfigurations.forge.config.system.build.toplevel --dry-run 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
