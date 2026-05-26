@@ -5,6 +5,7 @@
 }: {
   imports = [
     ./hardware-configuration.nix
+    ../../modules/hardware/nvidia.nix
     ../../modules/hardware/thunderbolt-dock.nix
     ../../modules/desktop/hyprland.nix
     ../../modules/desktop/sddm.nix
@@ -23,6 +24,7 @@
     ../../modules/dev/python.nix
     ../../modules/dev/devenv.nix
     ../../modules/dev/waydroid.nix
+    ../../modules/dev/ollama.nix
   ];
 
   host = {

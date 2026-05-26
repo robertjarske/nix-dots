@@ -104,6 +104,7 @@ in {
     zsh.shellAliases = {
       # Hostname is arch-serobja but flake attribute stays forge — override here.
       nrs = lib.mkForce "nh os switch ~/code/nix-dots --hostname forge";
+      nrb = lib.mkForce "nh os boot ~/code/nix-dots --hostname forge";
       nrt = lib.mkForce "nh os test ~/code/nix-dots --hostname forge";
 
       apps = "cd ~/code/applications";
@@ -192,9 +193,30 @@ in {
       force = true;
     };
 
+    file.".config/opencode/opencode.json".text = builtins.toJSON {
+      "$schema" = "https://opencode.ai/config.json";
+      autoupdate = false;
+      shell = "zsh";
+      model = "ollama/qwen2.5-coder:7b";
+      small_model = "ollama/llama3.2:3b";
+      provider = {
+        ollama = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "Ollama (local)";
+          options.baseURL = "http://127.0.0.1:11434/v1";
+          models = {
+            "qwen2.5-coder:7b".name = "Qwen2.5 Coder 7B";
+            "qwen2.5-coder:14b".name = "Qwen2.5 Coder 14B";
+            "llama3.2:3b".name = "Llama 3.2 3B";
+          };
+        };
+      };
+    };
+
     packages = [
       unstable.onlyoffice-desktopeditors
       unstable.zed-editor
+      unstable.opencode
       pkgs.qalculate-gtk
     ];
 

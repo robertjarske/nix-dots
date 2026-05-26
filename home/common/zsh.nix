@@ -127,6 +127,7 @@
 
         # --- Nix system management ---
         nrs = "nh os switch ~/code/nix-dots"; # build + switch, shows package diff
+        nrb = "nh os boot ~/code/nix-dots"; # build + set boot default, no immediate switch
         nrt = "nh os test ~/code/nix-dots"; # switch without adding to boot menu
         nfu = "cd ~/code/nix-dots && nix flake update"; # update all flake inputs
         ngen = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system";

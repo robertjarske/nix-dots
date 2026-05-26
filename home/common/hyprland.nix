@@ -6,15 +6,6 @@
   hyprpanel,
   ...
 }: let
-  # Solid Catppuccin Mocha base (#1e1e2e) shown immediately on login via swww
-  # before wallpaper-restore fades in the real wallpaper. Always in the Nix store.
-  fallbackWallpaper =
-    pkgs.runCommand "fallback-wallpaper.png" {
-      nativeBuildInputs = [pkgs.imagemagick];
-    } ''
-      convert -size 1920x1080 xc:'#1e1e2e' "$out"
-    '';
-
   # Listens on Hyprland's event socket and re-runs wallpaper-restore whenever a
   # monitor is added. This fixes dock monitors not getting a wallpaper on login
   # (Thunderbolt enumeration is slower than the initial 2-second delay).
@@ -39,33 +30,21 @@
     '';
   };
 
-  # Restores the last-used wallpaper from ~/.config/hypr/current_wallpaper on login
-  # and whenever a new monitor is connected. Falls back to a random pick on first run.
-  # Does NOT pull git or acquire a lock — kept lightweight for startup use.
-  # swww img waits for the daemon internally so no explicit delay is needed.
+  # Runs matugen on wayle's current wallpaper. Called on login and on monitor hotplug.
+  # Wayle (systemd service) owns the display; this script only handles color theming.
   wallpaper-restore = pkgs.writeShellApplication {
     name = "wallpaper-restore";
-    runtimeInputs = [unstable.awww pkgs.matugen hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    runtimeInputs = [unstable.wayle unstable.awww pkgs.matugen hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
-      current_file="$HOME/.config/hypr/current_wallpaper"
+      # Wait up to 10 s for awww to set a wallpaper on first boot.
       wallpaper=""
+      for _ in $(seq 1 20); do
+        wallpaper=$(awww query 2>/dev/null | grep "eDP-1" | awk -F'image: ' '{print $2}')
+        [ -n "$wallpaper" ] && break
+        sleep 0.5
+      done
+      [ -n "$wallpaper" ] || exit 0
 
-      if [ -f "$current_file" ]; then
-        saved=$(cat "$current_file")
-        [ -f "$saved" ] && wallpaper="$saved"
-      fi
-
-      # First run — no saved wallpaper yet. Pick random and persist it.
-      if [ -z "$wallpaper" ]; then
-        wallpapers_dir="$HOME/Pictures/wallpapers"
-        [ -d "$wallpapers_dir" ] || exit 0
-        wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) | shuf -n1)
-        [ -n "$wallpaper" ] || exit 0
-        mkdir -p "$(dirname "$current_file")"
-        printf '%s' "$wallpaper" > "$current_file"
-      fi
-
-      awww img "$wallpaper" --transition-type fade --transition-duration 1
       ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
       matugen --source-color-index 0 image "$wallpaper"
       matugen --source-color-index 0 --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
@@ -74,11 +53,11 @@
     '';
   };
 
-  # Picks a new random wallpaper, saves it as the current, and applies it with a fade.
+  # Advances wayle to the next shuffled wallpaper then re-runs matugen for theming.
   # Keybind: CTRL+ALT+W — call this when you want to change wallpaper.
   wallpaper-change = pkgs.writeShellApplication {
     name = "wallpaper-change";
-    runtimeInputs = [unstable.awww pkgs.matugen pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
+    runtimeInputs = [unstable.wayle unstable.awww pkgs.matugen pkgs.util-linux pkgs.git hyprpanel.packages.${pkgs.stdenv.hostPlatform.system}.default];
     text = ''
       # Prevent concurrent runs — rapid invocations would run matugen in parallel.
       exec 9>/tmp/wallpaper-change.lock
@@ -87,8 +66,6 @@
       wallpapers_dir="$HOME/Pictures/wallpapers"
 
       # Self-heal: clone on first login, pull on subsequent logins.
-      # Activation-time sync (syncWallpapers) is the authoritative path on
-      # rebuilds; this catches cases where that clone failed (e.g. offline).
       if [ ! -d "$wallpapers_dir" ]; then
         mkdir -p "$(dirname "$wallpapers_dir")"
         git clone https://github.com/robertjarske/wallpapers "$wallpapers_dir" \
@@ -97,34 +74,11 @@
         git -C "$wallpapers_dir" pull --ff-only 2>/dev/null || true
       fi
 
-      history_file="$HOME/.config/hypr/wallpaper_history"
-      all=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \))
-      total=$(echo "$all" | wc -l)
-
-      # Exclude the last third of the collection from the candidate pool so
-      # recently shown wallpapers are skipped. Fall back to the full list if
-      # everything has been excluded (e.g. tiny collection).
-      exclude=$((total / 3))
-      candidates="$all"
-      if [ "$exclude" -gt 0 ] && [ -f "$history_file" ]; then
-        filtered=$(echo "$all" | grep -vxF "$(tail -n "$exclude" "$history_file")" || true)
-        [ -n "$filtered" ] && candidates="$filtered"
-      fi
-
-      wallpaper=$(echo "$candidates" | shuf -n1)
+      wayle wallpaper next
+      sleep 0.3
+      wallpaper=$(awww query 2>/dev/null | grep "eDP-1" | awk -F'image: ' '{print $2}')
       [ -n "$wallpaper" ] || exit 0
 
-      # Append to history and keep it bounded to the collection size.
-      echo "$wallpaper" >> "$history_file"
-      tmp=$(mktemp)
-      tail -n "$total" "$history_file" > "$tmp" && mv "$tmp" "$history_file"
-
-      # Persist so wallpaper-restore can reapply on next login.
-      current_file="$HOME/.config/hypr/current_wallpaper"
-      mkdir -p "$(dirname "$current_file")"
-      printf '%s' "$wallpaper" > "$current_file"
-
-      awww img "$wallpaper" --transition-type fade --transition-duration 1
       ln -sf "$wallpaper" "$HOME/.config/rofi/.current_wallpaper"
       matugen --source-color-index 0 image "$wallpaper"
       matugen --source-color-index 0 --type scheme-expressive -c "$HOME/.config/matugen/config-hyprpanel.toml" image "$wallpaper"
@@ -259,7 +213,6 @@ in {
       };
 
       dwindle = {
-        pseudotile = true;
         preserve_split = true;
       };
 
@@ -305,7 +258,7 @@ in {
         "$mod, F, fullscreen"
         "$mod, V, togglefloating"
         "$mod, P, pseudo"
-        "$mod, J, togglesplit"
+        "$mod, J, layoutmsg, togglesplit"
         "$mod SHIFT, M, exit"
         "$mod SHIFT, R, exec, hyprpanel -q & hyprpanel"
 
@@ -397,31 +350,11 @@ in {
         "uwsm app -- hypridle"
         "uwsm app -- wl-paste --type text --watch cliphist store"
         "uwsm app -- wl-paste --type image --watch cliphist store"
-        # awww-daemon is managed by a systemd user service (see below) so it
-        # auto-restarts on crash. awww img waits for the socket internally.
-        # One-shot setup script — no persistent cgroup needed.
-        "bash -c 'awww img ${fallbackWallpaper} && wallpaper-restore'"
-        # Re-apply wallpaper to any monitor added after login (e.g. dock).
+        # wayle systemd service owns wallpaper display; this script only runs matugen.
+        "wallpaper-restore"
+        # Re-apply matugen colors to any monitor added after login (e.g. dock).
         "uwsm app -- wallpaper-monitor-listener"
       ];
     };
-  };
-
-  systemd.user.services.swww-daemon = {
-    Unit = {
-      Description = "swww wallpaper daemon";
-      PartOf = ["graphical-session.target"];
-      After = ["graphical-session.target"];
-    };
-    Service = {
-      ExecStart = "${unstable.awww}/bin/awww-daemon";
-      # Prefix with '-' so a failure here (e.g. socket not ready on first boot)
-      # does not fail the service. Initial wallpaper is set by exec-once; this
-      # only matters for daemon restarts where the socket already exists.
-      ExecStartPost = "-${wallpaper-restore}/bin/wallpaper-restore";
-      Restart = "always";
-      RestartSec = "3s";
-    };
-    Install.WantedBy = ["graphical-session.target"];
   };
 }
