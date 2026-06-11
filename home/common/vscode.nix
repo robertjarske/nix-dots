@@ -1,8 +1,8 @@
 {
   pkgs,
   lib,
+  unstable,
   vscodeExtensions,
-  vscodeLatest,
   ...
 }: let
   mkt = vscodeExtensions.vscode-marketplace;
@@ -233,7 +233,7 @@ in {
 
   programs.vscode = {
     enable = true;
-    package = vscodeLatest;
+    package = unstable.vscode;
     mutableExtensionsDir = true;
 
     profiles.default = {
