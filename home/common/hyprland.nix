@@ -359,7 +359,7 @@ in {
     };
   };
 
-  xdg.configFile."hypr/xdg-desktop-portal-hyprland.conf".text = ''
-    cursor_mode = 1
-  '';
+  wayland.windowManager.hyprland.settings.cursor = {
+    no_hardware_cursors = true;
+  };
 }
