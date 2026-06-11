@@ -9,7 +9,7 @@
       wrapProgram $out/bin/teams-for-linux \
         --add-flags "--class=teams-for-linux" \
         --add-flags "--enable-features=WebRTCPipeWireCapturer" \
-        --add-flags "--ozone-platform=x11"
+        --add-flags "--ozone-platform=wayland"
     '';
   };
 in {
