@@ -76,7 +76,7 @@
     };
 
     neovimNightly = neovim-nightly-overlay.packages.${system}.default;
-# Apply overlay + allowUnfree on the same pkgs instance (required for unfree extensions).
+    # Apply overlay + allowUnfree on the same pkgs instance (required for unfree extensions).
     vscodeExtensions =
       (import nixpkgs {
         inherit system;
