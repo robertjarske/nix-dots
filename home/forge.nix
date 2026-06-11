@@ -215,7 +215,7 @@ in {
 
     packages = [
       unstable.onlyoffice-desktopeditors
-      unstable.zed-editor
+      unstable.zed-editor-fhs
       unstable.opencode
       pkgs.qalculate-gtk
     ];

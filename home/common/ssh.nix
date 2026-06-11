@@ -23,18 +23,19 @@
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    matchBlocks."*" = {
-      addKeysToAgent = "no";
-      forwardAgent = false; # Never forward — prevents lateral movement if a remote host is compromised
-      setEnv = {TERM = "xterm-256color";};
-    };
-
-    # Multiplex SSH connections so FIDO2 PIN + touch is only required once,
-    # then reused for subsequent git operations within the persist window.
-    matchBlocks."github.com" = {
-      controlMaster = "auto";
-      controlPath = "~/.ssh/cm-%r@%h:%p";
-      controlPersist = "10m";
+    settings = {
+      "*" = {
+        AddKeysToAgent = "no";
+        ForwardAgent = false; # Never forward — prevents lateral movement if a remote host is compromised
+        SetEnv = {TERM = "xterm-256color";};
+      };
+      # Multiplex SSH connections so FIDO2 PIN + touch is only required once,
+      # then reused for subsequent git operations within the persist window.
+      "github.com" = {
+        ControlMaster = "auto";
+        ControlPath = "~/.ssh/cm-%r@%h:%p";
+        ControlPersist = "10m";
+      };
     };
   };
 }

@@ -2,7 +2,7 @@ return {
   -- Add custom snippets
   {
     "L3MON4D3/LuaSnip",
-    opts = function()
+    opts = function(_, opts)
       local ls = require("luasnip")
       local s = ls.snippet
       local t = ls.text_node
@@ -18,6 +18,8 @@ return {
           t(");"),
         }),
       })
+
+      return opts
     end,
   },
 }

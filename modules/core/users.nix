@@ -12,7 +12,7 @@
   config = {
     users.users.${config.host.username} = {
       isNormalUser = true;
-      extraGroups = ["wheel" "networkmanager" "docker"];
+      extraGroups = ["wheel" "networkmanager" "docker" "onepassword" "video"];
       shell = pkgs.zsh;
       # Set a real password with `passwd` after first login.
       # mutableUsers = true (NixOS default) persists it across rebuilds.

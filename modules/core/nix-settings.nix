@@ -2,6 +2,7 @@ _: {
   nix = {
     settings = {
       experimental-features = ["nix-command" "flakes"];
+      trusted-users = ["root" "@wheel"];
 
       substituters = [
         "https://cache.nixos.org"
@@ -33,4 +34,9 @@ _: {
   # Disable NixOS options doc generation — avoids builtins.derivation
   # context warning and speeds up evaluation.
   documentation.nixos.enable = false;
+
+  # Prevent nixos-rebuild switch from restarting session-critical services
+  # that would kill active login sessions and log the user out.
+  systemd.services.systemd-logind.restartIfChanged = false;
+  systemd.services.display-manager.restartIfChanged = false;
 }

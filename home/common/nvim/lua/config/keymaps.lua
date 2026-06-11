@@ -9,17 +9,6 @@
 local map = vim.keymap.set
 local del = vim.keymap.del
 
--- Register which-key groups for Swedish keyboard keymaps
-vim.schedule(function()
-  local ok, wk = pcall(require, "which-key")
-  if ok then
-    wk.add({
-      { "<leader>r", group = "references", icon = "󰌹" },
-      { "<leader>t", group = "terminal/test", icon = "󰆍" },
-      { "<leader>T", group = "todo comments", icon = "󰄲" },
-    })
-  end
-end)
 
 -- ============================================================================
 -- TERMINAL
@@ -32,11 +21,10 @@ map({ "n", "t" }, "<F12>", "<cmd>lua Snacks.terminal.toggle()<cr>", { desc = "Te
 -- ============================================================================
 -- BUFFER NAVIGATION
 -- ============================================================================
--- Use Tab and Shift-Tab for buffer navigation
+-- LazyVim's <S-h>/<S-l> handle prev/next buffer — no Tab override needed.
+-- <Tab> is preserved for jumplist-forward (<C-i> alias).
 pcall(del, "n", "[b")
 pcall(del, "n", "]b")
-map("n", "<Tab>", "<cmd>bnext<cr>", { desc = "Next Buffer" })
-map("n", "<S-Tab>", "<cmd>bprevious<cr>", { desc = "Previous Buffer" })
 
 -- Replace <leader>` with <leader>ba (backtick is hard to reach)
 pcall(del, "n", "<leader>`")
@@ -51,36 +39,36 @@ map("n", "<leader>b>", "<cmd>BufferLineMoveNext<cr>", { desc = "Move Buffer Righ
 -- ============================================================================
 -- DIAGNOSTIC NAVIGATION
 -- ============================================================================
--- Replace [d and ]d with <leader>d, and <leader>d.
+-- <leader>d is LazyVim's debug (DAP) namespace — use <leader>x (diagnostics).
 pcall(del, "n", "[d")
 pcall(del, "n", "]d")
-map("n", "<leader>d,", vim.diagnostic.goto_prev, { desc = "Previous Diagnostic" })
-map("n", "<leader>d.", vim.diagnostic.goto_next, { desc = "Next Diagnostic" })
+map("n", "<leader>x,", function() vim.diagnostic.jump({ count = -1 }) end, { desc = "Previous Diagnostic" })
+map("n", "<leader>x.", function() vim.diagnostic.jump({ count = 1 }) end, { desc = "Next Diagnostic" })
 
 -- ============================================================================
 -- ERROR NAVIGATION
 -- ============================================================================
--- Replace [e and ]e with <leader>e, and <leader>e.
+-- <leader>e is LazyVim's explorer — use <leader>xe.
 pcall(del, "n", "[e")
 pcall(del, "n", "]e")
-map("n", "<leader>e,", function()
-  vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR })
+map("n", "<leader>xe,", function()
+  vim.diagnostic.jump({ count = -1, severity = vim.diagnostic.severity.ERROR })
 end, { desc = "Previous Error" })
-map("n", "<leader>e.", function()
-  vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR })
+map("n", "<leader>xe.", function()
+  vim.diagnostic.jump({ count = 1, severity = vim.diagnostic.severity.ERROR })
 end, { desc = "Next Error" })
 
 -- ============================================================================
 -- WARNING NAVIGATION
 -- ============================================================================
--- Replace [w and ]w with <leader>w, and <leader>w.
+-- <leader>w is LazyVim's window namespace — use <leader>xw.
 pcall(del, "n", "[w")
 pcall(del, "n", "]w")
-map("n", "<leader>w,", function()
-  vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.WARN })
+map("n", "<leader>xw,", function()
+  vim.diagnostic.jump({ count = -1, severity = vim.diagnostic.severity.WARN })
 end, { desc = "Previous Warning" })
-map("n", "<leader>w.", function()
-  vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.WARN })
+map("n", "<leader>xw.", function()
+  vim.diagnostic.jump({ count = 1, severity = vim.diagnostic.severity.WARN })
 end, { desc = "Next Warning" })
 
 -- ============================================================================

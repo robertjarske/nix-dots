@@ -157,6 +157,7 @@ in {
   wayland.windowManager.hyprland = {
     enable = true;
     package = unstable.hyprland;
+    configType = "hyprlang";
     # UWSM manages graphical-session.target activation; disabling home-manager's
     # own systemd integration avoids a double-activation conflict.
     systemd.enable = false;

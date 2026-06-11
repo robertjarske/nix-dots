@@ -100,6 +100,11 @@
       term = "xterm-kitty";
       linux_display_server = "auto";
       update_check_interval = 0;
+
+      # Disable config hot-reload watcher. On NixOS/Home Manager, ~/.config/kitty
+      # is a symlink into /nix/store, causing __watch_conf__ to recursively watch
+      # the entire store (~500k inotify watches). See: github.com/kovidgoyal/kitty/issues/10104
+      auto_reload_config = -1;
     };
 
     # Colors are managed by matugen (see home/common/matugen.nix).

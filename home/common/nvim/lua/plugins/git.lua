@@ -34,45 +34,22 @@ return {
     },
   },
 
-  -- LazyGit - Terminal UI
-  {
-    "kdheepak/lazygit.nvim",
-    cmd = { "LazyGit", "LazyGitConfig", "LazyGitCurrentFile", "LazyGitFilter", "LazyGitFilterCurrentFile" },
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-    },
-    keys = {
-      { "<leader>gl", group = "lazygit" },
-      { "<leader>glg", "<cmd>LazyGit<cr>", desc = "LazyGit" },
-      { "<leader>glf", "<cmd>LazyGitCurrentFile<cr>", desc = "LazyGit Current File" },
-    },
-  },
-
   -- Configure gitsigns (already installed)
   {
     "lewis6991/gitsigns.nvim",
     opts = {
       on_attach = function(buffer)
-        local gs = package.loaded.gitsigns
+        local gs = require("gitsigns")
 
         local function map(mode, l, r, desc)
           vim.keymap.set(mode, l, r, { buffer = buffer, desc = desc })
         end
 
-        -- Register which-key groups for buffer-local mappings
-        vim.schedule(function()
-          local ok, wk = pcall(require, "which-key")
-          if ok then
-            wk.add({
-              { "<leader>g", group = "git", buffer = buffer },
-              { "<leader>gh", group = "hunk", buffer = buffer },
-            })
-          end
-        end)
-
-        -- Navigation (using ]h and [h from LazyVim defaults)
-        map("n", "]h", gs.next_hunk, "Next Hunk")
-        map("n", "[h", gs.prev_hunk, "Prev Hunk")
+        -- Navigation: Swedish-friendly pattern ([ ] require AltGr on Swedish keyboards)
+        pcall(vim.keymap.del, "n", "]h", { buffer = buffer })
+        pcall(vim.keymap.del, "n", "[h", { buffer = buffer })
+        map("n", "<leader>gh.", gs.next_hunk, "Next Hunk")
+        map("n", "<leader>gh,", gs.prev_hunk, "Prev Hunk")
 
         -- Hunk actions
         map("n", "<leader>ghs", gs.stage_hunk, "Stage Hunk")

@@ -8,6 +8,8 @@
     neovimNightly
     unstable.claude-code
     pkgs.gcc # required by nvim-treesitter to compile parsers
+    pkgs.nil
+    pkgs.nixd
   ];
 
   environment.variables = {

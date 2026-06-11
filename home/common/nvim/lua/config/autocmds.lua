@@ -7,6 +7,20 @@
 -- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
 -- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
 
+
+-- Auto-show LSP hover after cursor is idle for updatetime ms.
+-- Skips if any floating window is already open (e.g. diagnostic float, noice, etc.)
+vim.api.nvim_create_autocmd("CursorHold", {
+  callback = function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_config(win).relative ~= "" then
+        return
+      end
+    end
+    vim.lsp.buf.hover()
+  end,
+})
+
 -- Set 4 space indentation for PHP files
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "php",

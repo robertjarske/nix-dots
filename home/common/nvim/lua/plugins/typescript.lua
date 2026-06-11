@@ -4,7 +4,7 @@ return {
     ft = { "typescript", "typescriptreact" },
     config = function()
       require("better-type-hover").setup({
-        openTypeDocKeymap = "<C-i>",
+        openTypeDocKeymap = "<M-t>",
       })
     end,
   },
