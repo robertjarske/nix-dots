@@ -358,4 +358,8 @@ in {
       ];
     };
   };
+
+  xdg.configFile."hypr/xdg-desktop-portal-hyprland.conf".text = ''
+    cursor_mode = 1
+  '';
 }
